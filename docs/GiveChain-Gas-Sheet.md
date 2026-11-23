@@ -3,28 +3,30 @@
 ## Test Conditions
 
 - Hardhat local test network
-- Same test account set for each run
-- Transaction values:
-  - Donation: 1 ETH
-  - Beneficiary registration: 1 wallet and identity commitment
-  - Milestone creation: 1 ETH
-  - Milestone approval plus vault release: 1 ETH
+- Solidity 0.8.28
+- Optimizer enabled with 200 runs
+- Identical Hardhat configuration for each benchmark pair
+- Custom-error pair: same zero-value `deposit()` call
+- Storage pair: same account, vault state, 1 ETH deposit, beneficiary, and
+  `approveMilestone(1)` input
 - Each measurement was read from the transaction receipt's `gasUsed`
-- Before measurements came from the original contract implementation
-- After measurements came from the accounting and optimization implementation
 
 ## Measurements
 
-| Operation | Before | After | Change |
+| Benchmark | Before | After | Change |
 |---|---:|---:|---:|
-| Donation | 69,335 | 91,445 | +22,110 |
-| Beneficiary registration | 120,949 | 120,949 | 0 |
-| Milestone creation | 158,611 | 158,611 | 0 |
-| Milestone approval + release | 120,565 | 120,436 | -129 |
+| Custom-error revert (`deposit({ value: 0 })`) | 21,303 gas | 21,225 gas | -78 gas |
+| Milestone storage caching (`approveMilestone`) | 104,560 gas | 104,397 gas | -163 gas |
 
-The donation increase is attributable to the additional `totalRefundable`
-accounting write required to enforce pooled-fund refunds. It is an intentional
-security cost, not a hidden bug or test discrepancy.
+The custom-error comparison used minimal purpose-built contracts with equivalent
+zero-value revert conditions under the same Hardhat compiler settings. It
+measured a 78-gas saving on this revert path. It does not establish savings on
+successful transactions.
+
+The storage-caching result came from two purpose-built contracts that differed
+only in whether milestone fields were cached locally. Both used the same
+Hardhat config, account, vault state, deposit value, beneficiary, and
+`approveMilestone(1)` input.
 
 ## Optimization 1: Custom Solidity Errors
 
@@ -45,8 +47,10 @@ After: the milestone amount and beneficiary are copied to local variables once
 before vault calls, reducing repeated storage access and making external-call
 arguments consistent.
 
-Measured result: approval plus release decreased from 120,565 to 120,436 gas,
-a 129-gas reduction.
+The storage-caching benchmark contracts are in
+`contracts/GasMilestoneStorageBaseline.sol` and
+`contracts/GasMilestoneStorageAfter.sol`. Run the benchmark test to reproduce
+the measurements.
 
 ## Security/Correctness Tradeoff
 

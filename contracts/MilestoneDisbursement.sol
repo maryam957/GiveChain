@@ -110,21 +110,24 @@ contract MilestoneDisbursement is AccessControlBase {
     {
         Milestone storage milestone = milestones[milestoneId];
 
-        require(milestone.id != 0, "Milestone does not exist");
+        uint256 milestoneIdValue = milestone.id;
+        uint256 projectId = milestone.projectId;
+        address beneficiary = milestone.beneficiary;
+        uint256 amount = milestone.amount;
+
+        require(milestoneIdValue != 0, "Milestone does not exist");
         require(milestone.status == Status.Pending, "Not pending");
 
         require(
             registry.isBeneficiaryApproved(
-                milestone.projectId,
-                milestone.beneficiary
+                projectId,
+                beneficiary
             ),
             "Beneficiary approval missing"
         );
 
         // Update status before external calls
         milestone.status = Status.Released;
-        uint256 amount = milestone.amount;
-        address beneficiary = milestone.beneficiary;
 
         // Reserve and transfer funds through the vault
         vault.reserveFunds(amount);

@@ -44,6 +44,11 @@ Reservations move ETH from `totalRefundable` to `totalCommitted`; releases move
 it out of `totalCommitted` and out of the vault balance. Repeated refunds cannot
 reuse a donor balance or committed funds.
 
+Refunds are permanently disabled by the public `refundsClosed` state after the
+first successful reservation. New donations remain possible after closure, but
+the vault does not make them refundable. `donorBalance` is therefore historical
+contribution accounting after closure, not a live refundable entitlement.
+
 ### Cross-project misuse
 
 Beneficiary approval is scoped to `(projectId, wallet)`. A beneficiary approved

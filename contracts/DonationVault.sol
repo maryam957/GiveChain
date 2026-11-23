@@ -14,6 +14,7 @@ contract DonationVault is AccessControlBase {
     error ZeroAmount();
     error RefundTransferFailed();
     error BeneficiaryTransferFailed();
+    error RefundsClosed();
 
     mapping(address => uint256) public donorBalance;
 
@@ -22,6 +23,7 @@ contract DonationVault is AccessControlBase {
     uint256 public totalReleased;
     uint256 public totalCommitted;
     uint256 public totalRefundable;
+    bool public refundsClosed;
 
     event DonationReceived(address indexed donor, uint256 amount);
     event RefundIssued(address indexed donor, uint256 amount);
@@ -59,6 +61,7 @@ contract DonationVault is AccessControlBase {
         whenNotPaused
         nonReentrant
     {
+        if (refundsClosed) revert RefundsClosed();
         if (amount == 0) revert ZeroRefund();
         if (donorBalance[msg.sender] < amount) revert InsufficientDonorBalance();
         if (totalRefundable < amount) revert InsufficientUncommittedFunds();
@@ -89,6 +92,7 @@ contract DonationVault is AccessControlBase {
             totalCommitted += amount;
             totalRefundable -= amount;
         }
+        refundsClosed = true;
 
         emit FundsReserved(amount);
     }

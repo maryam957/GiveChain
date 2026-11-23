@@ -2,13 +2,13 @@ const { expect } = require("chai");
 const { ethers } = require("hardhat");
 
 describe("GiveChain Complete Test Suite", function () {
-    let admin, ngo, auditor, donor, beneficiary, attacker;
+    let admin, ngo, ngo2, auditor, donor, beneficiary, attacker;
     let vault, registry, milestone;
 
     const ETH = ethers.parseEther;
 
     async function deploySystem() {
-        [admin, ngo, auditor, donor, beneficiary, attacker] =
+        [admin, ngo, ngo2, auditor, donor, beneficiary, attacker] =
             await ethers.getSigners();
 
         const Vault = await ethers.getContractFactory("DonationVault");
@@ -29,8 +29,10 @@ describe("GiveChain Complete Test Suite", function () {
         await milestone.waitForDeployment();
 
         await registry.grantRole(await registry.NGO_ROLE(), ngo.address);
+        await registry.grantRole(await registry.NGO_ROLE(), ngo2.address);
         await registry.grantRole(await registry.AUDITOR_ROLE(), auditor.address);
         await milestone.grantRole(await milestone.NGO_ROLE(), ngo.address);
+        await milestone.grantRole(await milestone.NGO_ROLE(), ngo2.address);
         await milestone.grantRole(await milestone.AUDITOR_ROLE(), auditor.address);
         await vault.grantRole(await vault.MILESTONE_ROLE(), await milestone.getAddress());
         await vault.grantRole(await vault.DISBURSEMENT_ROLE(), await milestone.getAddress());
@@ -52,6 +54,21 @@ describe("GiveChain Complete Test Suite", function () {
         );
     }
 
+    async function assertVaultAccountingInvariants() {
+        const vaultAddress = await vault.getAddress();
+        const balance = await ethers.provider.getBalance(vaultAddress);
+        const refundable = await vault.totalRefundable();
+        const committed = await vault.totalCommitted();
+        const donated = await vault.totalDonated();
+        const refunded = await vault.totalRefunded();
+        const released = await vault.totalReleased();
+
+        expect(refundable + committed).to.be.at.most(balance);
+        expect(refundable + committed).to.equal(balance);
+        expect(donated).to.equal(refunded + released + refundable + committed);
+        expect(refunded).to.be.at.most(donated);
+    }
+
     beforeEach(async function () {
         await deploySystem();
     });
@@ -62,6 +79,7 @@ describe("GiveChain Complete Test Suite", function () {
             expect(await vault.donorBalance(donor.address)).to.equal(ETH("5"));
             expect(await ethers.provider.getBalance(await vault.getAddress()))
                 .to.equal(ETH("5"));
+            await assertVaultAccountingInvariants();
         });
 
         it("should reject a zero donation", async function () {
@@ -95,6 +113,7 @@ describe("GiveChain Complete Test Suite", function () {
             expect(await vault.totalRefunded()).to.equal(ETH("2"));
             expect(await ethers.provider.getBalance(await vault.getAddress()))
                 .to.equal(ETH("3"));
+            await assertVaultAccountingInvariants();
         });
 
         it("should reject a zero refund", async function () {
@@ -123,23 +142,55 @@ describe("GiveChain Complete Test Suite", function () {
                 .to.be.revertedWithCustomError(vault, "InsufficientDonorBalance");
         });
 
-        it("should cap pooled refunds at uncommitted vault funds", async function () {
+        it("should close refunds after a successful reservation", async function () {
             await vault.connect(attacker).deposit({ value: ETH("3") });
             await vault.grantRole(
                 await vault.MILESTONE_ROLE(),
                 admin.address
             );
+            await vault.connect(admin).reserveFunds(ETH("2"));
 
-            await vault.connect(admin).reserveFunds(ETH("6"));
+            expect(await vault.refundsClosed()).to.equal(true);
+            await expect(vault.connect(donor).refund(ETH("1")))
+                .to.be.revertedWithCustomError(vault, "RefundsClosed");
+            await expect(vault.connect(attacker).refund(ETH("1")))
+                .to.be.revertedWithCustomError(vault, "RefundsClosed");
 
-            expect(await vault.totalRefundable()).to.equal(ETH("2"));
+            expect(await vault.donorBalance(donor.address)).to.equal(ETH("5"));
+            expect(await vault.donorBalance(attacker.address)).to.equal(ETH("3"));
+            expect(await vault.totalRefunded()).to.equal(0);
+        });
 
-            await expect(vault.connect(donor).refund(ETH("3")))
+        it("should not close refunds after a failed reservation", async function () {
+            await vault.grantRole(await vault.MILESTONE_ROLE(), admin.address);
+
+            await expect(vault.connect(admin).reserveFunds(ETH("6")))
                 .to.be.revertedWithCustomError(vault, "InsufficientUncommittedFunds");
 
-            await vault.connect(donor).refund(ETH("2"));
-            expect(await vault.donorBalance(donor.address)).to.equal(ETH("3"));
-            expect(await vault.totalRefunded()).to.equal(ETH("2"));
+            expect(await vault.refundsClosed()).to.equal(false);
+            await vault.connect(donor).refund(ETH("1"));
+            expect(await vault.totalRefunded()).to.equal(ETH("1"));
+        });
+
+        it("should leave balances unchanged when refund after closure is attempted", async function () {
+            await vault.grantRole(await vault.MILESTONE_ROLE(), admin.address);
+            await vault.connect(donor).refund(ETH("1"));
+
+            await vault.connect(attacker).deposit({ value: ETH("2") });
+            await vault.connect(admin).reserveFunds(ETH("2"));
+
+            const donorBalance = await vault.donorBalance(donor.address);
+            const attackerBalance = await vault.donorBalance(attacker.address);
+            const refundable = await vault.totalRefundable();
+            const committed = await vault.totalCommitted();
+
+            await expect(vault.connect(donor).refund(ETH("3")))
+                .to.be.revertedWithCustomError(vault, "RefundsClosed");
+
+            expect(await vault.donorBalance(donor.address)).to.equal(donorBalance);
+            expect(await vault.donorBalance(attacker.address)).to.equal(attackerBalance);
+            expect(await vault.totalRefundable()).to.equal(refundable);
+            expect(await vault.totalCommitted()).to.equal(committed);
         });
 
         it("should keep released funds out of the refundable pool", async function () {
@@ -156,6 +207,7 @@ describe("GiveChain Complete Test Suite", function () {
 
             expect(await vault.totalCommitted()).to.equal(0);
             expect(await vault.totalRefundable()).to.equal(ETH("3"));
+            await assertVaultAccountingInvariants();
         });
     });
 
@@ -295,6 +347,16 @@ describe("GiveChain Complete Test Suite", function () {
                 )
             ).to.be.revertedWith("Beneficiary not approved");
         });
+
+        it("should prevent NGO 2 from registering a beneficiary in NGO 1's project", async function () {
+            await registry.connect(ngo).createProject("Project", "Description");
+
+            await expect(registry.connect(ngo2).registerBeneficiary(
+                1,
+                beneficiary.address,
+                ethers.keccak256(ethers.toUtf8Bytes("ngo2-secret"))
+            )).to.be.revertedWith("Not project owner");
+        });
     });
 
     describe("MilestoneDisbursement", function () {
@@ -391,6 +453,61 @@ describe("GiveChain Complete Test Suite", function () {
             expect(record.status).to.equal(0);
             expect(await vault.totalCommitted()).to.equal(0);
         });
+
+        it("should prevent NGO 2 from creating a milestone in NGO 1's project", async function () {
+            await expect(milestone.connect(ngo2).createMilestone(
+                1,
+                beneficiary.address,
+                ETH("1"),
+                "QmNgo2Evidence"
+            )).to.be.revertedWith("Not project owner");
+        });
+
+        it("should reject approval after a milestone is rejected", async function () {
+            await milestone.connect(ngo).createMilestone(
+                1,
+                beneficiary.address,
+                ETH("1"),
+                "QmEvidenceCID"
+            );
+            await milestone.connect(auditor).rejectMilestone(1);
+
+            await expect(milestone.connect(auditor).approveMilestone(1))
+                .to.be.revertedWith("Not pending");
+            expect(await vault.refundsClosed()).to.equal(false);
+        });
+
+        it("should roll back reservation and closure when ETH release fails", async function () {
+            const RevertingBeneficiary =
+                await ethers.getContractFactory("RevertingBeneficiary");
+            const revertingBeneficiary = await RevertingBeneficiary.deploy();
+            await revertingBeneficiary.waitForDeployment();
+
+            await registry.connect(ngo).registerBeneficiary(
+                1,
+                revertingBeneficiary.getAddress(),
+                ethers.keccak256(ethers.toUtf8Bytes("reverting-secret"))
+            );
+            await registry.connect(auditor).approveBeneficiary(
+                1,
+                await revertingBeneficiary.getAddress()
+            );
+
+            await milestone.connect(ngo).createMilestone(
+                1,
+                await revertingBeneficiary.getAddress(),
+                ETH("1"),
+                "QmRevertingEvidence"
+            );
+
+            await expect(milestone.connect(auditor).approveMilestone(1))
+                .to.be.revertedWithCustomError(vault, "BeneficiaryTransferFailed");
+
+            const record = await milestone.getMilestone(1);
+            expect(record.status).to.equal(0);
+            expect(await vault.totalCommitted()).to.equal(0);
+            expect(await vault.refundsClosed()).to.equal(false);
+        });
     });
 
     describe("Emergency Pause", function () {
@@ -417,6 +534,44 @@ describe("GiveChain Complete Test Suite", function () {
                 "Project",
                 "Description"
             )).to.be.reverted;
+        });
+
+        it("should stop milestone creation and approval while milestone contract is paused", async function () {
+            await createApprovedBeneficiary();
+            await milestone.connect(admin).pause();
+
+            await expect(milestone.connect(ngo).createMilestone(
+                1,
+                beneficiary.address,
+                ETH("1"),
+                "QmPausedEvidence"
+            )).to.be.reverted;
+
+            await milestone.connect(admin).unpause();
+            await milestone.connect(ngo).createMilestone(
+                1,
+                beneficiary.address,
+                ETH("1"),
+                "QmPausedEvidence"
+            );
+
+            await milestone.connect(admin).pause();
+            await expect(milestone.connect(auditor).approveMilestone(1))
+                .to.be.reverted;
+        });
+
+        it("should reject milestone pause by an unauthorized account", async function () {
+            await expect(milestone.connect(attacker).pause()).to.be.reverted;
+        });
+
+        it("should keep vault and milestone pause states independent", async function () {
+            await vault.connect(admin).pause();
+            expect(await vault.paused()).to.equal(true);
+            expect(await milestone.paused()).to.equal(false);
+
+            await milestone.connect(admin).pause();
+            expect(await vault.paused()).to.equal(true);
+            expect(await milestone.paused()).to.equal(true);
         });
     });
 
