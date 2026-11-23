@@ -5,6 +5,15 @@ pragma solidity ^0.8.28;
 import "./AccessControlBase.sol";
 
 contract DonationVault is AccessControlBase {
+    error ZeroDonation();
+    error ZeroRefund();
+    error InsufficientDonorBalance();
+    error InsufficientUncommittedFunds();
+    error InsufficientCommittedFunds();
+    error InvalidBeneficiary();
+    error ZeroAmount();
+    error RefundTransferFailed();
+    error BeneficiaryTransferFailed();
 
     mapping(address => uint256) public donorBalance;
 
@@ -12,6 +21,7 @@ contract DonationVault is AccessControlBase {
     uint256 public totalRefunded;
     uint256 public totalReleased;
     uint256 public totalCommitted;
+    uint256 public totalRefundable;
 
     event DonationReceived(address indexed donor, uint256 amount);
     event RefundIssued(address indexed donor, uint256 amount);
@@ -30,10 +40,15 @@ contract DonationVault is AccessControlBase {
 
     // Internal function to record donations
     function _recordDonation() internal {
-        require(msg.value > 0, "Donation must be greater than zero");
+        if (msg.value == 0) revert ZeroDonation();
 
-        donorBalance[msg.sender] += msg.value;
-        totalDonated += msg.value;
+        uint256 newDonorBalance = donorBalance[msg.sender] + msg.value;
+        donorBalance[msg.sender] = newDonorBalance;
+
+        unchecked {
+            totalDonated += msg.value;
+            totalRefundable += msg.value;
+        }
 
         emit DonationReceived(msg.sender, msg.value);
     }
@@ -44,18 +59,19 @@ contract DonationVault is AccessControlBase {
         whenNotPaused
         nonReentrant
     {
-        require(amount > 0, "Amount must be greater than zero");
-        require(donorBalance[msg.sender] >= amount, "Insufficient donor balance");
-
-        uint256 available = address(this).balance - totalCommitted;
-        require(available >= amount, "Insufficient uncommitted funds");
+        if (amount == 0) revert ZeroRefund();
+        if (donorBalance[msg.sender] < amount) revert InsufficientDonorBalance();
+        if (totalRefundable < amount) revert InsufficientUncommittedFunds();
 
         // Update state before transferring ETH
-        donorBalance[msg.sender] -= amount;
-        totalRefunded += amount;
+        unchecked {
+            donorBalance[msg.sender] -= amount;
+            totalRefunded += amount;
+            totalRefundable -= amount;
+        }
 
         (bool success, ) = payable(msg.sender).call{value: amount}("");
-        require(success, "Refund transfer failed");
+        if (!success) revert RefundTransferFailed();
 
         emit RefundIssued(msg.sender, amount);
     }
@@ -66,12 +82,13 @@ contract DonationVault is AccessControlBase {
         onlyRole(MILESTONE_ROLE)
         whenNotPaused
     {
-        require(amount > 0, "Amount must be greater than zero");
+        if (amount == 0) revert ZeroAmount();
+        if (totalRefundable < amount) revert InsufficientUncommittedFunds();
 
-        uint256 available = address(this).balance - totalCommitted;
-        require(available >= amount, "Insufficient vault funds");
-
-        totalCommitted += amount;
+        unchecked {
+            totalCommitted += amount;
+            totalRefundable -= amount;
+        }
 
         emit FundsReserved(amount);
     }
@@ -83,22 +100,22 @@ contract DonationVault is AccessControlBase {
         whenNotPaused
         nonReentrant
     {
-        require(beneficiary != address(0), "Invalid beneficiary");
-        require(amount > 0, "Amount must be greater than zero");
-        require(totalCommitted >= amount, "Insufficient committed funds");
+        if (beneficiary == address(0)) revert InvalidBeneficiary();
+        if (amount == 0) revert ZeroAmount();
+        if (totalCommitted < amount) revert InsufficientCommittedFunds();
 
         // Update state before transferring ETH
         totalCommitted -= amount;
         totalReleased += amount;
 
         (bool success, ) = beneficiary.call{value: amount}("");
-        require(success, "Fund transfer failed");
+        if (!success) revert BeneficiaryTransferFailed();
 
         emit FundsReleased(beneficiary, amount);
     }
 
     // View the amount available for new commitments or refunds
     function getAvailableBalance() external view returns (uint256) {
-        return address(this).balance - totalCommitted;
+        return totalRefundable;
     }
 }

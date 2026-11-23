@@ -123,19 +123,21 @@ contract MilestoneDisbursement is AccessControlBase {
 
         // Update status before external calls
         milestone.status = Status.Released;
+        uint256 amount = milestone.amount;
+        address beneficiary = milestone.beneficiary;
 
         // Reserve and transfer funds through the vault
-        vault.reserveFunds(milestone.amount);
+        vault.reserveFunds(amount);
 
         vault.releaseTo(
-            payable(milestone.beneficiary),
-            milestone.amount
+            payable(beneficiary),
+            amount
         );
 
         emit MilestoneReleased(
             milestoneId,
-            milestone.beneficiary,
-            milestone.amount,
+            beneficiary,
+            amount,
             msg.sender
         );
     }
