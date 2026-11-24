@@ -15,3 +15,17 @@ node_modules
 
 # Hardhat Ignition default folder for deployments against a local node
 ignition/deployments/chain-31337
+
+# Environment files (keep .env.example)
+.env.*
+!.env.example
+
+# Gas reports
+gas-report*.txt
+
+# Backend / frontend build and data output
+dist
+build
+*.sqlite
+*.db
+deployments/localhost.json
