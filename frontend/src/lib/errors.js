@@ -79,8 +79,23 @@ function findRevertData(err) {
  * @returns {{ kind: "rejected"|"failed", message: string, errorName?: string }}
  */
 export function describeError(err) {
-    if (err?.code === "ACTION_REJECTED" || err?.code === 4001 || err?.info?.error?.code === 4001) {
-        return { kind: "rejected", message: "You rejected the transaction in your wallet." };
+    // MetaMask (EIP-1193) error codes, possibly wrapped by ethers.
+    const walletCode = [err?.code, err?.error?.code, err?.info?.error?.code].find((c) => typeof c === "number");
+    if (err?.code === "ACTION_REJECTED" || walletCode === 4001) {
+        return { kind: "rejected", message: "You rejected the request in MetaMask." };
+    }
+    if (walletCode === 4100) {
+        return {
+            kind: "failed",
+            message:
+                "MetaMask has not allowed this site to use that account. In MetaMask, open the site connections (the icon at the top), connect the account you want to use with localhost:5173, then try again.",
+        };
+    }
+    if (walletCode === -32002) {
+        return { kind: "failed", message: "MetaMask already has a request waiting. Open MetaMask to finish or close it, then try again." };
+    }
+    if (walletCode === 4902) {
+        return { kind: "failed", message: "This network is not added in MetaMask yet. Add GiveChain Local (see docs/DEMO.md) and try again." };
     }
     if (err?.revert?.name) {
         return {

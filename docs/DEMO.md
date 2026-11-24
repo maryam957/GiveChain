@@ -39,11 +39,11 @@ Stopping terminal 1 wipes the blockchain. After a restart, run terminal 2's comm
 
 ## 2. Logins and wallets
 
-Every person has their own account: **email + password** to log in, plus a **MetaMask wallet** that signs their transactions. Each demo account is already linked to one of Hardhat's built-in test wallets.
+Every person has their own account: **email + password** to log in, plus a **MetaMask wallet** that signs their transactions. Each demo account is already linked to one of the local chain's built-in test wallets: account #N on Hardhat, or the Nth account in Ganache (see section 5).
 
 **Password for every demo account:** see the `password` field in [`backend/demo-users.json`](../backend/demo-users.json). These are local test logins only; never reuse them anywhere real.
 
-| Email | Who | Hardhat account # | State after seeding |
+| Email | Who | Account # | State after seeding |
 |---|---|---|---|
 | `admin@givechain.test` | GiveChain Admin | 0 | Admin and pauser on-chain |
 | `ngo1@givechain.test` | Sara Malik, Demo Relief Foundation | 1 | Approved NGO; runs *Winter Food Packages* and *Clean Water Pilot* |
@@ -123,7 +123,34 @@ Each step is one person's login, so each team member can drive one role.
 | 11 | (terminal) | `npx hardhat test test/Security.test.js` | The reentrancy attack that steals from a vulnerable vault but fails against GiveChain |
 | 12 | (terminal) | `npm run inspect -- <beneficiary wallet>` | The same facts, read straight from the contracts |
 
-## 5. Deploying elsewhere (optional)
+## 5. Using Ganache instead of Hardhat
+
+GiveChain also runs on **Ganache** (the desktop app, or `ganache` on the command line). Your Ganache accounts then hold the money and roles, and you can watch every transaction in Ganache's window.
+
+1. **Start Ganache.** In the desktop app, choose **Quickstart**; it runs on `http://127.0.0.1:7545` with chain ID **1337**. The two "waiting" demo users (ngo3, beneficiary5) need **12 accounts**: Settings → Accounts & Keys → *Total accounts to generate* = 12, then restart the workspace. With the default 10 accounts everything else works, and those two users can link a wallet themselves.
+2. **Deploy and seed:**
+
+   ```bash
+   npm run deploy:ganache
+   npm run seed:ganache
+   ```
+
+3. **Backend and website** (instead of `npm run backend` / `npm run frontend`):
+
+   ```bash
+   npm run backend:ganache
+   npm run frontend:ganache
+   ```
+
+4. **MetaMask:** add a network with RPC URL `http://127.0.0.1:7545` and chain ID `1337` (the website also offers to add it). Import Ganache accounts with the key icon next to each account in Ganache.
+5. **Logins:** the same demo emails and password. On Ganache they are linked to Ganache's accounts: `ngo1` is Ganache's account #1 (the second in the list), and so on. Ganache logins are kept in a separate file (`backend/data/accounts-ganache.json`), so Hardhat and Ganache never mix them up.
+6. **Check:** `npm run inspect:ganache` reads the Ganache contracts directly.
+
+Run Hardhat or Ganache, one at a time, with the default ports. Each has its own login cookie, so the browser can stay logged in to both.
+
+Notes: ConsenSys stopped maintaining Ganache in 2023, so Hardhat (the default) is the safer choice for the final demo. A Ganache account's key also works on the Hardhat chain: the address is the same on every chain, and only balances differ. So you can also import it into MetaMask and fund it with test ETH on Hardhat.
+
+## 6. Deploying elsewhere (optional)
 
 For a public testnet such as Sepolia, fill in `.env` (see `.env.example`): `SEPOLIA_RPC_URL`, `DEPLOYER_PRIVATE_KEY` (a throwaway test wallet only), and `NGO_ADDRESSES` / `AUDITOR_ADDRESSES` (comma-separated). Then:
 

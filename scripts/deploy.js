@@ -6,7 +6,7 @@
 //
 // Order follows docs/ARCHITECTURE.md section 9.
 //
-// Roles on a local chain use the Hardhat test accounts (see docs/DEMO.md).
+// Roles on a local chain (Hardhat or Ganache) use the node's own test accounts (see docs/DEMO.md).
 // On other networks, set NGO_ADDRESSES and AUDITOR_ADDRESSES in .env
 // (comma-separated); the deployer becomes admin and pauser.
 
@@ -14,7 +14,7 @@ const fs = require("fs");
 const path = require("path");
 const { ethers, network, artifacts } = require("hardhat");
 
-const LOCAL_NETWORKS = ["hardhat", "localhost"];
+const LOCAL_NETWORKS = ["hardhat", "localhost", "ganache"];
 
 /** Hardhat test account index for each demo role (local chains only). */
 const LOCAL_ROLE_ACCOUNTS = {

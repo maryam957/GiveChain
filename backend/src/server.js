@@ -19,7 +19,8 @@ const { createApp } = require("./api/app");
 const { JsonDb } = require("./accounts/jsonDb");
 const { AccountsService } = require("./accounts/accountsService");
 
-const LOCAL_CHAIN_ID = 31337;
+// Local development chains: Hardhat (31337) and Ganache (1337).
+const LOCAL_CHAIN_IDS = [31337, 1337];
 const DEMO_USERS_FILE = path.join(__dirname, "..", "demo-users.json");
 
 const log = (message) => console.log(`[${new Date().toISOString().slice(11, 19)}] ${message}`);
@@ -44,12 +45,32 @@ async function main() {
     const db = new JsonDb(config.accountsDbFile);
     const accounts = new AccountsService({ db, store });
     let demoUsersChecked = false;
-    function importDemoUsersIfLocal(chainId) {
-        if (demoUsersChecked || Number(chainId) !== LOCAL_CHAIN_ID || !fs.existsSync(DEMO_USERS_FILE)) return;
+    /**
+     * On a local chain, create the demo logins and link each one to the node's own
+     * unlocked account with the same number (account #0, #1, ...), so they match the
+     * wallets used by the deploy and seed scripts on Hardhat and on Ganache alike.
+     */
+    async function importDemoUsersIfLocal(chainId) {
+        if (demoUsersChecked || !LOCAL_CHAIN_IDS.includes(Number(chainId)) || !fs.existsSync(DEMO_USERS_FILE)) return;
         demoUsersChecked = true;
         const demo = JSON.parse(fs.readFileSync(DEMO_USERS_FILE, "utf8"));
-        const created = accounts.importDemoUsers(demo.users.map((u) => ({ ...u, password: demo.password })));
+        let nodeAccounts = [];
+        try {
+            nodeAccounts = await provider.send("eth_accounts", []);
+        } catch {
+            log("Could not read the node's accounts; demo users will have no wallet linked.");
+        }
+        const users = demo.users.map((u) => ({
+            ...u,
+            password: demo.password,
+            wallet: nodeAccounts[u.accountIndex] || null,
+        }));
+        const created = accounts.importDemoUsers(users);
+        const unlinked = users.filter((u) => !u.wallet).map((u) => u.email);
         if (created) log(`Created ${created} local demo accounts (see docs/DEMO.md for logins).`);
+        if (created && unlinked.length) {
+            log(`The node has only ${nodeAccounts.length} accounts; these demo users have no wallet yet: ${unlinked.join(", ")}`);
+        }
     }
 
     let deployment = null;
@@ -70,7 +91,7 @@ async function main() {
             if (indexer) indexer.setDeployment(deployment);
             else indexer = new Indexer({ provider, deployment, store, log });
             log(`Loaded deployment for "${deployment.network}" (chain ${deployment.chainId}). Indexing from block ${deployment.startBlock}.`);
-            importDemoUsersIfLocal(deployment.chainId);
+            await importDemoUsersIfLocal(deployment.chainId);
         }
         try {
             await indexer.sync();
@@ -95,6 +116,8 @@ async function main() {
         }),
         corsOrigin: config.corsOrigin,
         accounts,
+        publicRpcUrl: config.rpcUrl,
+        cookieName: `gc_session_${config.network}`,
         secureCookies: process.env.NODE_ENV === "production",
     });
     app.listen(config.port, () => {

@@ -1,20 +1,18 @@
 {
-  "_comment": "LOCAL DEMO ONLY. Test logins for the local Hardhat chain (chain 31337). Each account is linked to a Hardhat test wallet (#N = the account number printed by `npm run node`; import that key into MetaMask to act as this user). The backend imports these only when the deployment is on chain 31337. Never use these passwords or wallets anywhere real.",
+  "_comment": "LOCAL DEMO ONLY. Test logins for a local chain (Hardhat 31337 or Ganache 1337). accountIndex N links the login to the node's own account #N (Hardhat: the accounts printed by `npm run node`; Ganache: the Nth account in the Ganache window, counting from 0). Import that account's private key into MetaMask to act as this user. The backend imports these only on a local chain. Never use these passwords anywhere real.",
   "password": "GiveChainDemo1",
   "users": [
     {
       "email": "admin@givechain.test",
       "name": "GiveChain Admin",
       "accountType": "admin",
-      "wallet": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      "hardhatAccount": 0
+      "accountIndex": 0
     },
     {
       "email": "ngo1@givechain.test",
       "name": "Sara Malik",
       "accountType": "ngo",
-      "wallet": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-      "hardhatAccount": 1,
+      "accountIndex": 1,
       "organisation": {
         "organisationName": "Demo Relief Foundation",
         "registrationNumber": "DEMO-NGO-0001",
@@ -27,8 +25,7 @@
       "email": "ngo2@givechain.test",
       "name": "Omar Khan",
       "accountType": "ngo",
-      "wallet": "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      "hardhatAccount": 2,
+      "accountIndex": 2,
       "organisation": {
         "organisationName": "Demo Learning Trust",
         "registrationNumber": "DEMO-NGO-0002",
@@ -41,8 +38,7 @@
       "email": "verifier@givechain.test",
       "name": "Ayesha Raza",
       "accountType": "verifier",
-      "wallet": "0x90F79bf6EB2c4f870365E785982E1f101E93b906",
-      "hardhatAccount": 3,
+      "accountIndex": 3,
       "organisation": {
         "organisationName": "Demo Audit Partners",
         "registrationNumber": "DEMO-AUD-0001",
@@ -55,50 +51,43 @@
       "email": "donor.a@givechain.test",
       "name": "Donor A",
       "accountType": "donor",
-      "wallet": "0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65",
-      "hardhatAccount": 4
+      "accountIndex": 4
     },
     {
       "email": "donor.b@givechain.test",
       "name": "Donor B",
       "accountType": "donor",
-      "wallet": "0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc",
-      "hardhatAccount": 5
+      "accountIndex": 5
     },
     {
       "email": "beneficiary1@givechain.test",
       "name": "Beneficiary One",
       "accountType": "beneficiary",
-      "wallet": "0x976EA74026E726554dB657fA54763abd0C3a0aa9",
-      "hardhatAccount": 6
+      "accountIndex": 6
     },
     {
       "email": "beneficiary2@givechain.test",
       "name": "Beneficiary Two",
       "accountType": "beneficiary",
-      "wallet": "0x14dC79964da2C08b23698B3D3cc7Ca32193d9955",
-      "hardhatAccount": 7
+      "accountIndex": 7
     },
     {
       "email": "beneficiary3@givechain.test",
       "name": "Beneficiary Three",
       "accountType": "beneficiary",
-      "wallet": "0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f",
-      "hardhatAccount": 8
+      "accountIndex": 8
     },
     {
       "email": "beneficiary4@givechain.test",
       "name": "Beneficiary Four",
       "accountType": "beneficiary",
-      "wallet": "0xa0Ee7A142d267C1f36714E4a8F75612F20a79720",
-      "hardhatAccount": 9
+      "accountIndex": 9
     },
     {
       "email": "ngo3@givechain.test",
       "name": "Bilal Ahmed",
       "accountType": "ngo",
-      "wallet": "0xBcd4042DE499D14e55001CcbB24a551F3b954096",
-      "hardhatAccount": 10,
+      "accountIndex": 10,
       "_note": "Has applied to become an NGO and is waiting for the admin's approval.",
       "organisation": {
         "organisationName": "Demo Health Network",
@@ -112,8 +101,7 @@
       "email": "beneficiary5@givechain.test",
       "name": "Beneficiary Five",
       "accountType": "beneficiary",
-      "wallet": "0x71bE63f3384f5fb98995898A86B02Fb2426c5788",
-      "hardhatAccount": 11,
+      "accountIndex": 11,
       "_note": "Has applied for help in campaign 1 and is waiting for NGO 1 to select them.",
       "beneficiaryApplications": [
         {

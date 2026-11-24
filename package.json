@@ -17,7 +17,12 @@
     "frontend": "npm --prefix frontend run dev",
     "frontend:install": "npm --prefix frontend install",
     "frontend:build": "npm --prefix frontend run build",
-    "inspect": "node scripts/inspect.js"
+    "inspect": "node scripts/inspect.js",
+    "deploy:ganache": "hardhat run scripts/deploy.js --network ganache",
+    "seed:ganache": "hardhat run scripts/seed.js --network ganache",
+    "backend:ganache": "cross-env GIVECHAIN_NETWORK=ganache RPC_URL=http://127.0.0.1:7545 npm --prefix backend start",
+    "frontend:ganache": "cross-env GIVECHAIN_RPC_URL=http://127.0.0.1:7545 npm --prefix frontend run dev",
+    "inspect:ganache": "cross-env GIVECHAIN_NETWORK=ganache RPC_URL=http://127.0.0.1:7545 node scripts/inspect.js"
   },
   "keywords": [],
   "author": "",

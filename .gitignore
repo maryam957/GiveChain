@@ -43,3 +43,4 @@ frontend/dist/
 
 # Backend user accounts database (local)
 backend/data/
+deployments/ganache.json

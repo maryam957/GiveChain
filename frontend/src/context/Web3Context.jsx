@@ -12,7 +12,8 @@ import { registerErrorAbis } from "../lib/errors";
 const Web3Context = createContext(null);
 export const useWeb3 = () => useContext(Web3Context);
 
-const LOCAL_CHAIN_ID = 31337;
+// Local development chains MetaMask may need to add: Hardhat (31337) and Ganache (1337).
+const LOCAL_CHAIN_NAMES = { 31337: "GiveChain Local (Hardhat)", 1337: "GiveChain Local (Ganache)" };
 const CONTRACT_NAMES = ["GiveChainAccess", "MockUSDC", "ProjectRegistry", "DonationVault", "MilestoneDisbursement"];
 const STORAGE_KEY = "givechain.metamask";
 
@@ -122,14 +123,14 @@ export function Web3Provider({ children }) {
         try {
             await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: chainIdHex }] });
         } catch (err) {
-            if (err?.code === 4902 && config.chainId === LOCAL_CHAIN_ID) {
+            if (err?.code === 4902 && LOCAL_CHAIN_NAMES[config.chainId]) {
                 await window.ethereum.request({
                     method: "wallet_addEthereumChain",
                     params: [
                         {
                             chainId: chainIdHex,
-                            chainName: "GiveChain Local",
-                            rpcUrls: ["http://127.0.0.1:8545"],
+                            chainName: LOCAL_CHAIN_NAMES[config.chainId],
+                            rpcUrls: [config.rpcUrl || "http://127.0.0.1:8545"],
                             nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
                         },
                     ],
@@ -149,9 +150,13 @@ export function Web3Provider({ children }) {
         } catch {
             // the wrong-network banner lets the user retry
         }
-        await adoptAccount(accounts[0]);
+        // Switching network can change which account MetaMask exposes to the site,
+        // so read the currently selected, permitted account again.
+        const after = await window.ethereum.request({ method: "eth_accounts" }).catch(() => []);
+        const chosen = after[0] || accounts[0];
+        await adoptAccount(chosen);
         remember(true);
-        return ethers.getAddress(accounts[0]);
+        return ethers.getAddress(chosen);
     }, [switchNetwork, adoptAccount]);
 
     const disconnect = useCallback(() => {

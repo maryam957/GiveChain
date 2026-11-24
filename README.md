@@ -61,6 +61,7 @@ Then open http://localhost:5173 and log in. Demo logins, MetaMask setup and a de
 | `npm run frontend` | Website at `http://localhost:5173` |
 | `npm run frontend:build` | Production build of the website |
 | `npm run inspect -- 0xWALLET` | Reads a wallet's roles, balances and payments straight from the contracts |
+| `npm run deploy:ganache`, `seed:ganache`, `backend:ganache`, `frontend:ganache`, `inspect:ganache` | The same, on Ganache (port 7545) instead of Hardhat; see [docs/DEMO.md §5](docs/DEMO.md) |
 
 ## Configuration
 

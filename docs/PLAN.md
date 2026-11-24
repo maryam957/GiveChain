@@ -143,3 +143,10 @@ Added after the hand-in drafts, at the team's request.
 - **Fixed:** duplicate-person protection in the website. The NGO's identity key now comes from a deterministic wallet signature and IDs are normalised.
 - **Added:** `npm run inspect` reads any wallet's roles, balances and payments straight from the contracts.
 - Tests: 34 backend tests (18 new account tests) + 238 contract/indexer tests. Browser-tested: admin approval, NGO selecting an applicant, the duplicate-ID failure, verifier approval, new user sign-up → wallet link → application, the wrong-wallet guard.
+
+### Ganache support
+
+- `npm run deploy:ganache` / `seed:ganache` / `backend:ganache` / `frontend:ganache` / `inspect:ganache` run everything on Ganache (port 7545, chain 1337).
+- Demo logins link to the node's account #N on any local chain; each network has its own accounts file and login cookie.
+- Fixed: MetaMask error 4100 ("not authorized") when linking a wallet; the site now re-requests permission and retries, and shows plain-English MetaMask errors.
+- Tested on a real Ganache chain: deploy, seed, backend indexing, demo login linked to a Ganache account, and a donation through the website.

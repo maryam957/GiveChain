@@ -67,13 +67,13 @@ const METADATA_FIELDS = {
  *        When given, user accounts are enabled and IPFS uploads require a login.
  * @param {boolean} [deps.secureCookies]
  */
-function createApp({ store, ipfs, getDeployment, getStatus = () => ({}), corsOrigin = "*", accounts = null, secureCookies = false }) {
+function createApp({ store, ipfs, getDeployment, getStatus = () => ({}), corsOrigin = "*", accounts = null, secureCookies = false, publicRpcUrl = null, cookieName }) {
     const app = express();
     app.use(cors({ origin: corsOrigin, credentials: true }));
     app.use(express.json({ limit: "100kb" }));
 
     if (accounts) {
-        app.use("/api", createAccountsRouter({ accounts, secureCookies }));
+        app.use("/api", createAccountsRouter({ accounts, secureCookies, cookieName }));
     }
     // With accounts enabled, only logged-in users may store files on IPFS.
     const requireLoginForUpload = (req, res, next) => {
@@ -157,6 +157,7 @@ function createApp({ store, ipfs, getDeployment, getStatus = () => ({}), corsOri
         return {
             network: d.network,
             chainId: d.chainId,
+            rpcUrl: publicRpcUrl, // for MetaMask's "add network"
             tokenDecimals: 6,
             tokenSymbol: "mUSDC",
             contracts: d.contracts,

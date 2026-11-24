@@ -20,14 +20,14 @@ function readCookie(req, name) {
     return null;
 }
 
-function setSessionCookie(res, token, { secure }) {
-    const attrs = [`${COOKIE}=${encodeURIComponent(token)}`, "Path=/", "HttpOnly", "SameSite=Lax", `Max-Age=${7 * 86400}`];
+function setSessionCookie(res, token, { secure, name = COOKIE }) {
+    const attrs = [`${name}=${encodeURIComponent(token)}`, "Path=/", "HttpOnly", "SameSite=Lax", `Max-Age=${7 * 86400}`];
     if (secure) attrs.push("Secure");
     res.setHeader("Set-Cookie", attrs.join("; "));
 }
 
-function clearSessionCookie(res) {
-    res.setHeader("Set-Cookie", `${COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
+function clearSessionCookie(res, name = COOKIE) {
+    res.setHeader("Set-Cookie", `${name}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`);
 }
 
 /** Simple in-memory limiter for login attempts, per email and per IP. */
@@ -54,8 +54,10 @@ function createLoginLimiter() {
  * @param {object} deps
  * @param {import("../accounts/accountsService").AccountsService} deps.accounts
  * @param {boolean} [deps.secureCookies]
+ * @param {string} [deps.cookieName]  One cookie name per network, so Hardhat and Ganache
+ *        sites on localhost can be logged in at the same time.
  */
-function createAccountsRouter({ accounts, secureCookies = false }) {
+function createAccountsRouter({ accounts, secureCookies = false, cookieName = COOKIE }) {
     const router = express.Router();
     const limiter = createLoginLimiter();
 
@@ -70,7 +72,7 @@ function createAccountsRouter({ accounts, secureCookies = false }) {
 
     // Attaches req.user when a valid session cookie is present.
     router.use((req, res, next) => {
-        req.sessionToken = readCookie(req, COOKIE);
+        req.sessionToken = readCookie(req, cookieName);
         req.user = accounts.userForSession(req.sessionToken);
         next();
     });
@@ -91,7 +93,7 @@ function createAccountsRouter({ accounts, secureCookies = false }) {
 
     router.post("/auth/signup", route((req, res) => {
         const user = accounts.signup(req.body || {});
-        setSessionCookie(res, accounts.createSession(user), { secure: secureCookies });
+        setSessionCookie(res, accounts.createSession(user), { secure: secureCookies, name: cookieName });
         res.status(201);
         return accounts.publicUser(user);
     }));
@@ -108,13 +110,13 @@ function createAccountsRouter({ accounts, secureCookies = false }) {
             throw err;
         }
         limiter.reset(`email:${email}`);
-        setSessionCookie(res, accounts.createSession(user), { secure: secureCookies });
+        setSessionCookie(res, accounts.createSession(user), { secure: secureCookies, name: cookieName });
         return accounts.publicUser(user);
     }));
 
     router.post("/auth/logout", route((req, res) => {
         if (req.sessionToken) accounts.deleteSession(req.sessionToken);
-        clearSessionCookie(res);
+        clearSessionCookie(res, cookieName);
         return { ok: true };
     }));
 

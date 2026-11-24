@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ethers } from "ethers";
 import { api } from "../lib/api";
+import { describeError } from "../lib/errors";
 import { sameAddress, shortAddress } from "../lib/format";
 import { useWeb3 } from "../context/Web3Context";
 import { useAuth } from "../context/AuthContext";
@@ -20,6 +21,30 @@ export function useWalletState() {
     return "ready";
 }
 
+const isUnauthorized = (err) => err?.code === 4100 || err?.error?.code === 4100 || err?.info?.error?.code === 4100;
+
+/**
+ * Asks MetaMask to sign `message` with `address`. MetaMask answers 4100 ("not authorized")
+ * when the site's permission does not cover that account, which can happen after
+ * switching network or account, or after creating a new account. In that case, ask for
+ * the permission again, take whichever account the user allows, and retry once.
+ * @returns {Promise<{address: string, signature: string}>}
+ */
+async function signWithPermission(address, message) {
+    const hexMessage = ethers.hexlify(ethers.toUtf8Bytes(message));
+    try {
+        const signature = await window.ethereum.request({ method: "personal_sign", params: [hexMessage, address] });
+        return { address, signature };
+    } catch (err) {
+        if (!isUnauthorized(err)) throw err;
+        await window.ethereum.request({ method: "wallet_requestPermissions", params: [{ eth_accounts: {} }] });
+        const [allowed] = await window.ethereum.request({ method: "eth_accounts" });
+        if (!allowed) throw err;
+        const signature = await window.ethereum.request({ method: "personal_sign", params: [hexMessage, allowed] });
+        return { address: ethers.getAddress(allowed), signature };
+    }
+}
+
 /** Connects MetaMask and proves wallet ownership by signing a one-time message. */
 export function LinkWalletButton({ label = "Connect and link MetaMask", className = "button" }) {
     const { connect, hasMetaMask } = useWeb3();
@@ -34,11 +59,10 @@ export function LinkWalletButton({ label = "Connect and link MetaMask", classNam
             const address = await connect();
             if (!address) return;
             const { message } = await api.walletChallenge();
-            const signer = await new ethers.BrowserProvider(window.ethereum).getSigner(address);
-            const signature = await signer.signMessage(message);
-            setUser(await api.linkWallet(address, signature));
+            const signed = await signWithPermission(address, message);
+            setUser(await api.linkWallet(signed.address, signed.signature));
         } catch (err) {
-            setError(err?.code === "ACTION_REJECTED" || err?.code === 4001 ? "You cancelled the signature in MetaMask." : err.message);
+            setError(describeError(err).message);
         } finally {
             setBusy(false);
         }

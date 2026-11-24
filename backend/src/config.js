@@ -16,7 +16,12 @@ module.exports = {
     deploymentFile:
         process.env.DEPLOYMENT_FILE || path.join(ROOT, "deployments", `${network}.json`),
     seedDataDir: path.join(ROOT, "seed-data"),
-    accountsDbFile: process.env.ACCOUNTS_DB_FILE || path.join(ROOT, "backend", "data", "accounts.json"),
+    network,
+    // One accounts file per network, so demo logins on Hardhat and on Ganache
+    // each point at that chain's own wallets.
+    accountsDbFile:
+        process.env.ACCOUNTS_DB_FILE ||
+        path.join(ROOT, "backend", "data", network === "localhost" ? "accounts.json" : `accounts-${network}.json`),
     pollIntervalMs: Number(process.env.INDEXER_POLL_MS || 1500),
     ipfs: {
         localDir: process.env.IPFS_LOCAL_DIR || path.join(ROOT, "backend", "storage", "ipfs"),
