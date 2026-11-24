@@ -50,7 +50,7 @@ Custom errors and NatSpec comments are used in every contract.
 
 Phase 2 contracts are written for **clarity first**. They become the documented gas baseline in Phase 4, where the optimizations (immutable addresses, struct packing, `bytes32` CIDs, ...) are applied and measured against them.
 
-Progress: **2a done** (GiveChainAccess, AccessControlBase, MockUSDC; 37 tests). **2b done** (ProjectRegistry; 52 tests).
+Progress: **2a done** (GiveChainAccess, AccessControlBase, MockUSDC; 37 tests). **2b done** (ProjectRegistry; 52 tests). **2c done** (DonationVault; 54 tests).
 
 **Done when:** all unit tests for each contract pass, including the full happy path: create campaign → register and approve beneficiary → donate → submit → approve → release → confirm.
 

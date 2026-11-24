@@ -283,4 +283,5 @@ flowchart TB
 - IPFS files stay available only while someone pins them.
 - Contracts are not upgradeable. A bug fix means redeploying.
 - A single admin and auditor are used in the demo. Production would use multisig wallets and several auditors.
-- Pro-rata refunds can leave a tiny remainder in the vault from integer division.
+- Pro-rata refunds can leave a tiny remainder in the vault from integer division. A donor whose share rounds down to zero cannot claim (tested).
+- The vault supports standard ERC-20 tokens only. Fee-on-transfer or rebasing tokens would break its accounting; MockUSDC is neither.

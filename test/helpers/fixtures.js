@@ -64,12 +64,55 @@ async function deployRegistryWithCampaignFixture() {
     return { ...ctx, campaignId: 1n };
 }
 
+/** Reservation status enum, mirroring DonationVault. */
+const ReservationStatus = { None: 0n, Reserved: 1n, Released: 2n, Cancelled: 3n };
+
+/**
+ * Campaign 1 (owned by `ngo`) with `beneficiary` and `beneficiary2` approved,
+ * plus DonationVault linked to a MockDisbursementCaller (`caller`), which stands
+ * in for MilestoneDisbursement. Donors each hold 10,000 mUSDC and have approved
+ * the vault to spend all of it.
+ */
+async function deployVaultFixture() {
+    const ctx = await deployRegistryWithCampaignFixture();
+    const { registry, token, access, ngo, auditor, beneficiary, beneficiary2, donor, donor2 } =
+        ctx;
+
+    await registry
+        .connect(ngo)
+        .registerBeneficiary(1, beneficiary.address, identityCommitment("s1", "id-1"));
+    await registry
+        .connect(ngo)
+        .registerBeneficiary(1, beneficiary2.address, identityCommitment("s2", "id-2"));
+    await registry.connect(auditor).approveBeneficiary(1, beneficiary.address);
+    await registry.connect(auditor).approveBeneficiary(1, beneficiary2.address);
+
+    const vault = await (await ethers.getContractFactory("DonationVault")).deploy(
+        await access.getAddress(),
+        await registry.getAddress(),
+        await token.getAddress()
+    );
+    const caller = await (await ethers.getContractFactory("MockDisbursementCaller")).deploy(
+        await vault.getAddress()
+    );
+    await vault.setDisbursementContract(await caller.getAddress());
+
+    for (const d of [donor, donor2]) {
+        await token.connect(d).faucet(USDC(10000));
+        await token.connect(d).approve(await vault.getAddress(), ethers.MaxUint256);
+    }
+
+    return { ...ctx, vault, caller };
+}
+
 module.exports = {
     USDC,
     identityCommitment,
     CampaignStatus,
     BeneficiaryStatus,
+    ReservationStatus,
     SAMPLE_CID,
     deployRegistryFixture,
     deployRegistryWithCampaignFixture,
+    deployVaultFixture,
 };
