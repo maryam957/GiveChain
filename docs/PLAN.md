@@ -81,6 +81,8 @@ Progress: **Phase 4 done.** Three optimizations (immutable addresses, storage pa
 
 **Done when:** `npx hardhat node` + one deploy command gives a ready-to-use local system.
 
+Progress: **Phase 5 done.** `npm run deploy:local` writes `deployments/localhost.json` (addresses, ABIs, roles, start block). `npm run seed:local` creates three campaigns in different states, with real IPFS CIDs for the demo files. Both were run against a real local node. Demo accounts and steps are in `docs/DEMO.md`.
+
 ## Phase 6 — Backend (Node.js)
 
 - IPFS upload/download endpoint (Pinata key from `.env`, with a local fallback so the demo works offline).

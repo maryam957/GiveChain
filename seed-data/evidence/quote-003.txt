@@ -1,0 +1,6 @@
+DEMO QUOTATION (fictional, for the GiveChain university prototype)
+Quote no: 003
+Supplier: Demo Wholesale Grocers
+Items: 1 winter food package plus blankets (household of six)
+Amount: 250.00 mUSDC
+Beneficiary reference: WF-003

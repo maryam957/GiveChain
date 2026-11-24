@@ -1,0 +1,6 @@
+DEMO RECEIPT (fictional, for the GiveChain university prototype)
+Receipt no: 001
+Supplier: Demo Wholesale Grocers
+Items: 1 winter food package (flour 20kg, rice 10kg, lentils 5kg, oil 5L, tea 1kg)
+Amount: 300.00 mUSDC
+Beneficiary reference: WF-001

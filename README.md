@@ -12,7 +12,9 @@ A blockchain-based NGO donation platform. Donations sit in a smart-contract vaul
 | `contracts/interfaces/` | Contract interfaces (Phase 1) |
 | `contracts/mocks/` | Test-only contracts (attackers, mock token) |
 | `test/` | Hardhat tests |
-| `scripts/` | Deployment and demo scripts |
+| `scripts/` | Deploy, seed and gas benchmark scripts |
+| `seed-data/` | Fictional campaign details and evidence files for the demo |
+| `deployments/` | Generated contract addresses and ABIs (local files are not committed) |
 | `backend/` | Node.js indexer and IPFS service (Phase 6) |
 | `frontend/` | React app (Phase 7) |
 | `docs/` | Plan, architecture, security package, gas sheet |
@@ -34,7 +36,10 @@ npm test
 | `npm run test:gas` | Runs the tests and prints a gas report |
 | `npm run gas` | Baseline vs optimized gas benchmark; writes `docs/gas-results.md` |
 | `npm run node` | Starts a local blockchain at `http://127.0.0.1:8545` |
-| `npm run deploy:local` | Deploys the contracts to the local blockchain (run `npm run node` first, in another terminal). Available again from Phase 5. |
+| `npm run deploy:local` | Deploys the contracts to the local blockchain (run `npm run node` first, in another terminal) and writes `deployments/localhost.json` |
+| `npm run seed:local` | Fills the local blockchain with demo campaigns, donations and milestones |
+
+See [docs/DEMO.md](docs/DEMO.md) for the demo accounts, MetaMask settings and what the seed creates.
 
 ## Configuration
 

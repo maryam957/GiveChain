@@ -29,3 +29,5 @@ build
 *.sqlite
 *.db
 deployments/localhost.json
+deployments/hardhat.json
+deployments/*.seed.json
