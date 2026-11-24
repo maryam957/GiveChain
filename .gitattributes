@@ -1,0 +1,2 @@
+# Keep demo files byte-identical on every OS, so their IPFS CIDs match everywhere.
+seed-data/** -text

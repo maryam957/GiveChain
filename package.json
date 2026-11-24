@@ -10,7 +10,10 @@
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "seed:local": "hardhat run scripts/seed.js --network localhost",
     "clean": "hardhat clean",
-    "gas": "hardhat run scripts/gas-benchmark.js"
+    "gas": "hardhat run scripts/gas-benchmark.js",
+    "backend": "npm --prefix backend start",
+    "backend:install": "npm --prefix backend install",
+    "backend:test": "npm --prefix backend test"
   },
   "keywords": [],
   "author": "",

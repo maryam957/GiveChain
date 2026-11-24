@@ -86,10 +86,12 @@ Progress: **Phase 5 done.** `npm run deploy:local` writes `deployments/localhost
 ## Phase 6 — Backend (Node.js)
 
 - IPFS upload/download endpoint (Pinata key from `.env`, with a local fallback so the demo works offline).
-- Event listener that indexes campaigns, donations, milestones and releases into a small database (SQLite).
+- Event listener that indexes campaigns, donations, milestones and releases. *Changed in Phase 6: an in-memory index rebuilt from the chain on every start instead of SQLite; see backend/README.md.*
 - REST API for the frontend: campaigns, a campaign's history, a donor's history, transparency totals.
 
 **Done when:** uploading a file returns a CID, and a donation made on-chain shows up in the API within seconds.
+
+Progress: **Phase 6 done.** `backend/`: IPFS service (local content-addressed store, CID re-verification on read, optional Pinata), event indexer, REST API with 14 endpoints. Tests: 16 IPFS tests (`npm run backend:test`) and 18 indexer/API tests against the real contracts (in `npm test`). Verified live: deploy + seed + backend, then a refund sent on-chain appeared in the API within seconds.
 
 ## Phase 7 — Frontend (React + Vite + ethers.js + MetaMask)
 

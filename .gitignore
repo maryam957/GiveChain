@@ -31,3 +31,6 @@ build
 deployments/localhost.json
 deployments/hardhat.json
 deployments/*.seed.json
+
+# Backend local IPFS store (rebuilt from seed-data and uploads)
+backend/storage/

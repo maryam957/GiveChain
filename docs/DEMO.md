@@ -21,6 +21,14 @@ npm run seed:local
 
 `deploy:local` writes `deployments/localhost.json` (addresses, ABIs, roles). The backend and frontend read this file. `seed:local` writes `deployments/localhost.seed.json`.
 
+**Terminal 3** (keep it running):
+
+```bash
+npm run backend
+```
+
+The backend indexes the chain and serves the API at `http://localhost:4000` (try `http://localhost:4000/api/stats`). It follows chain restarts and redeploys by itself.
+
 Stopping terminal 1 wipes the chain. After a restart, run both commands again.
 
 ## 2. Demo accounts

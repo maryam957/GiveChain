@@ -23,7 +23,7 @@ flowchart LR
 
     subgraph OffChain[Off-chain]
         BE[Node.js backend<br/>indexer + REST API]
-        DB[(SQLite)]
+        DB[(In-memory index<br/>rebuilt from events)]
         IPFS[(IPFS via Pinata)]
     end
 
@@ -225,7 +225,7 @@ Example: a campaign raised 1,000 and paid out 400 before it was cancelled. A don
 | Milestone evidence CID | Full CID in the `MilestoneSubmitted` event; `keccak256(CID)` in storage | Cheaper than storing the text; the hash fixes the evidence permanently |
 | Evidence files (receipts, photos) | IPFS | The CID proves the file is unchanged since submission. It does **not** prove the event really happened; that is what the auditor's approval is for. |
 | Donations, payouts, refunds | On-chain (events + balances) | The core transparency promise |
-| Searchable history, totals for dashboards | Backend database | Built only from on-chain events, so it can be deleted and rebuilt at any time |
+| Searchable history, totals for dashboards | Backend in-memory index | Built only from on-chain events and rebuilt on every backend start, so it can never drift from the chain for long |
 
 ## 7. Trust boundaries
 
@@ -281,7 +281,8 @@ flowchart TB
 ## 10. Known limitations (by design for a university prototype)
 
 - The auditor's approval is a human judgement. Blockchain proves what was approved and paid, not that aid was really delivered.
-- IPFS files stay available only while someone pins them.
+- IPFS files stay available only while someone pins them. In local mode they live in the backend's store (`backend/storage/`), and demo files are re-imported from `seed-data/` on every start.
+- The backend's upload endpoints have no login or rate limit (fine locally, not for a public deployment).
 - Contracts are not upgradeable. A bug fix means redeploying.
 - A single admin and auditor are used in the demo. Production would use multisig wallets and several auditors.
 - Pro-rata refunds can leave a tiny remainder in the vault from integer division. A donor whose share rounds down to zero cannot claim (tested).
