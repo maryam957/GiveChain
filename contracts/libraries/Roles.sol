@@ -6,6 +6,9 @@ pragma solidity ^0.8.28;
 /// @dev The admin role is OpenZeppelin's DEFAULT_ADMIN_ROLE (bytes32(0)),
 ///      which can grant and revoke all the roles below.
 library Roles {
+    /// @notice Manages all roles; can cancel any campaign. Same id as OpenZeppelin's DEFAULT_ADMIN_ROLE.
+    bytes32 internal constant ADMIN_ROLE = 0x00;
+
     /// @notice Creates and runs campaigns, registers beneficiaries, submits and releases milestones.
     bytes32 internal constant NGO_ROLE = keccak256("NGO_ROLE");
 
