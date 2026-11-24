@@ -72,6 +72,8 @@ Progress: **Phase 3 done.** `test/Security.test.js` has 32 tests covering S1–S
 
 **Done when:** one command reproduces the before/after table.
 
+Progress: **Phase 4 done.** Three optimizations (immutable addresses, storage packing, CID hash + event) measured against `contracts/gas-baseline/` with `npm run gas`. One campaign life cycle: 1,463,435 → 1,081,009 gas (−26.1%). Trade-offs, including two measured regressions, are documented in `docs/GiveChain-Gas-Sheet.md`. 220 tests passing.
+
 ## Phase 5 — Deployment
 
 - `scripts/deploy.js`: deploys everything, sets roles, saves addresses + ABIs to a file the backend and frontend read.

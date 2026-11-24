@@ -217,11 +217,12 @@ Example: a campaign raised 1,000 and paid out 400 before it was cancelled. A don
 | Data | Where | Why |
 |---|---|---|
 | Campaign id, NGO wallet, target, status | On-chain | Rules depend on it |
-| Campaign title, description, images | IPFS (CID on-chain) | Too large and costly for the chain; the CID still proves it was not changed |
+| Campaign title, description, images | IPFS. Full CID in the `CampaignCreated` event; `keccak256(CID)` in storage | Too large and costly for the chain; the stored hash still proves which file was published (gas optimization 3) |
 | Beneficiary wallet and status | On-chain | Payouts depend on it |
 | Beneficiary identity commitment | On-chain | Hash of `salt + national ID`, computed off-chain. Blocks duplicate people without revealing who they are. A random salt per person stops anyone guessing IDs from the hash. |
 | Beneficiary name, ID number, documents | **Never on-chain**; kept by the NGO | Personal data. Public chains are permanent and readable by everyone. |
-| Milestone amount, beneficiary, status, evidence CID | On-chain | Rules and transparency depend on it |
+| Milestone amount, beneficiary, status | On-chain | Rules and transparency depend on it |
+| Milestone evidence CID | Full CID in the `MilestoneSubmitted` event; `keccak256(CID)` in storage | Cheaper than storing the text; the hash fixes the evidence permanently |
 | Evidence files (receipts, photos) | IPFS | The CID proves the file is unchanged since submission. It does **not** prove the event really happened; that is what the auditor's approval is for. |
 | Donations, payouts, refunds | On-chain (events + balances) | The core transparency promise |
 | Searchable history, totals for dashboards | Backend database | Built only from on-chain events, so it can be deleted and rebuilt at any time |

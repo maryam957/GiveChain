@@ -32,6 +32,7 @@ npm test
 |---|---|
 | `npm test` | Runs all contract tests on a temporary local chain |
 | `npm run test:gas` | Runs the tests and prints a gas report |
+| `npm run gas` | Baseline vs optimized gas benchmark; writes `docs/gas-results.md` |
 | `npm run node` | Starts a local blockchain at `http://127.0.0.1:8545` |
 | `npm run deploy:local` | Deploys the contracts to the local blockchain (run `npm run node` first, in another terminal). Available again from Phase 5. |
 

@@ -56,7 +56,8 @@ describe("ProjectRegistry", function () {
             const campaign = await registry.getCampaign(1);
             expect(campaign.ngo).to.equal(ngo.address);
             expect(campaign.targetAmount).to.equal(USDC(5000));
-            expect(campaign.metadataCID).to.equal(SAMPLE_CID);
+            // Storage keeps keccak256(CID); the full CID is in the CampaignCreated event.
+            expect(campaign.metadataHash).to.equal(ethers.id(SAMPLE_CID));
             expect(campaign.status).to.equal(CampaignStatus.Active);
             expect(campaign.createdAt).to.be.greaterThan(0n);
             expect(await registry.campaignCount()).to.equal(1n);

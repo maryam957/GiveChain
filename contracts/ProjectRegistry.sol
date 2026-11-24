@@ -6,18 +6,22 @@ import "./interfaces/IProjectRegistry.sol";
 
 /// @title ProjectRegistry
 /// @notice Stores campaigns and their beneficiaries. Holds no money.
-/// @dev Campaign details (title, description, images) live on IPFS; only the
-///      CID is stored here. Beneficiaries are stored as a wallet plus an
+/// @dev Campaign details (title, description, images) live on IPFS. The full CID is
+///      published in the CampaignCreated event, and only its keccak256 hash is kept in
+///      storage (gas optimization): anyone can check a CID from the event against the
+///      stored hash. Beneficiaries are stored as a wallet plus an
 ///      identity commitment: keccak256(salt, national ID) computed off-chain,
 ///      so duplicates can be blocked without putting personal data on-chain.
 contract ProjectRegistry is AccessControlBase, IProjectRegistry {
     /// @notice On-chain record of a campaign.
+    /// @dev Gas: ngo, status and createdAt are packed into one 32-byte storage slot
+    ///      (20 + 1 + 5 bytes). uint40 timestamps last until the year 36,812.
     struct Campaign {
-        address ngo;
-        uint256 targetAmount; // in token units (MockUSDC has 6 decimals); informational
-        string metadataCID; // IPFS CID of the campaign's title, description and images
-        CampaignStatus status;
-        uint256 createdAt;
+        address ngo; // slot 0
+        CampaignStatus status; // slot 0
+        uint40 createdAt; // slot 0
+        uint256 targetAmount; // slot 1; in token units (MockUSDC has 6 decimals); informational
+        bytes32 metadataHash; // slot 2; keccak256 of the IPFS CID (full CID is in CampaignCreated)
     }
 
     /// @notice On-chain record of a beneficiary within one campaign.
@@ -35,6 +39,7 @@ contract ProjectRegistry is AccessControlBase, IProjectRegistry {
     /// @notice True if an identity commitment is already used in a campaign.
     mapping(uint256 => mapping(bytes32 => bool)) public identityUsed;
 
+    /// @notice The only place the full metadata CID is published.
     event CampaignCreated(
         uint256 indexed campaignId,
         address indexed ngo,
@@ -100,9 +105,9 @@ contract ProjectRegistry is AccessControlBase, IProjectRegistry {
         campaigns[campaignId] = Campaign({
             ngo: msg.sender,
             targetAmount: targetAmount,
-            metadataCID: metadataCID,
+            metadataHash: keccak256(bytes(metadataCID)),
             status: CampaignStatus.Active,
-            createdAt: block.timestamp
+            createdAt: uint40(block.timestamp)
         });
 
         emit CampaignCreated(campaignId, msg.sender, targetAmount, metadataCID);

@@ -14,7 +14,7 @@ import "./libraries/Roles.sol";
 ///      rules without keeping its own copy of the roles.
 abstract contract AccessControlBase is ReentrancyGuard {
     /// @notice The GiveChainAccess contract that stores roles and the pause state.
-    IGiveChainAccess public access;
+    IGiveChainAccess public immutable access;
 
     /// @notice A required address was the zero address.
     error ZeroAddress();

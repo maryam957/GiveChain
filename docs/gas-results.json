@@ -1,0 +1,114 @@
+[
+  {
+    "operation": "Deploy ProjectRegistry",
+    "baseline": 1386781,
+    "optimized": 1272321,
+    "saved": 114460,
+    "change": "-8.3%"
+  },
+  {
+    "operation": "Deploy DonationVault",
+    "baseline": 1433203,
+    "optimized": 1659791,
+    "saved": -226588,
+    "change": "15.8%"
+  },
+  {
+    "operation": "Deploy MilestoneDisbursement",
+    "baseline": 1386242,
+    "optimized": 1321908,
+    "saved": 64334,
+    "change": "-4.6%"
+  },
+  {
+    "operation": "createCampaign",
+    "baseline": 197858,
+    "optimized": 106973,
+    "saved": 90885,
+    "change": "-45.9%"
+  },
+  {
+    "operation": "registerBeneficiary",
+    "baseline": 109414,
+    "optimized": 105162,
+    "saved": 4252,
+    "change": "-3.9%"
+  },
+  {
+    "operation": "approveBeneficiary",
+    "baseline": 43044,
+    "optimized": 40783,
+    "saved": 2261,
+    "change": "-5.3%"
+  },
+  {
+    "operation": "donate (donor's first gift)",
+    "baseline": 123102,
+    "optimized": 117076,
+    "saved": 6026,
+    "change": "-4.9%"
+  },
+  {
+    "operation": "donate (repeat gift)",
+    "baseline": 71802,
+    "optimized": 65776,
+    "saved": 6026,
+    "change": "-8.4%"
+  },
+  {
+    "operation": "submitMilestone",
+    "baseline": 237472,
+    "optimized": 140203,
+    "saved": 97269,
+    "change": "-41.0%"
+  },
+  {
+    "operation": "approveMilestone (reserves funds)",
+    "baseline": 216583,
+    "optimized": 134871,
+    "saved": 81712,
+    "change": "-37.7%"
+  },
+  {
+    "operation": "releaseMilestone (pays beneficiary)",
+    "baseline": 148499,
+    "optimized": 110594,
+    "saved": 37905,
+    "change": "-25.5%"
+  },
+  {
+    "operation": "confirmReceipt",
+    "baseline": 38040,
+    "optimized": 33903,
+    "saved": 4137,
+    "change": "-10.9%"
+  },
+  {
+    "operation": "rejectMilestone",
+    "baseline": 61251,
+    "optimized": 41911,
+    "saved": 19340,
+    "change": "-31.6%"
+  },
+  {
+    "operation": "cancelMilestone (frees funds)",
+    "baseline": 63936,
+    "optimized": 60607,
+    "saved": 3329,
+    "change": "-5.2%"
+  },
+  {
+    "operation": "completeCampaign",
+    "baseline": 41923,
+    "optimized": 37668,
+    "saved": 4255,
+    "change": "-10.1%"
+  },
+  {
+    "operation": "claimRefund",
+    "baseline": 110511,
+    "optimized": 85482,
+    "saved": 25029,
+    "change": "-22.6%"
+  }
+]

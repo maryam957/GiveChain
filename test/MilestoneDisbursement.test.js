@@ -78,7 +78,8 @@ describe("MilestoneDisbursement", function () {
             expect(m.campaignId).to.equal(1n);
             expect(m.beneficiary).to.equal(beneficiary.address);
             expect(m.amount).to.equal(USDC(300));
-            expect(m.evidenceCID).to.equal(EVIDENCE_CID);
+            // Storage keeps keccak256(CID); the full CID is in the MilestoneSubmitted event.
+            expect(m.evidenceHash).to.equal(ethers.id(EVIDENCE_CID));
             expect(m.status).to.equal(MilestoneStatus.Submitted);
             expect(m.submittedAt).to.be.greaterThan(0n);
             expect(m.reviewedBy).to.equal(ethers.ZeroAddress);

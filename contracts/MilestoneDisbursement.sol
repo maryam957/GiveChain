@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./AccessControlBase.sol";
 import "./interfaces/IProjectRegistry.sol";
 import "./interfaces/IDonationVault.sol";
@@ -15,6 +16,8 @@ import "./interfaces/IDonationVault.sol";
 ///        Approved  -> Cancelled
 ///      Talks to the registry and vault only through their interfaces. The vault
 ///      repeats the important checks itself, so a bug here cannot misdirect money.
+///      The full evidence CID is published in MilestoneSubmitted; storage keeps only
+///      its keccak256 hash (gas optimization), so the CID can be checked but not swapped.
 contract MilestoneDisbursement is AccessControlBase {
     enum MilestoneStatus {
         None,
@@ -27,24 +30,28 @@ contract MilestoneDisbursement is AccessControlBase {
     }
 
     /// @notice One payment request to one beneficiary.
+    /// @dev Gas: packed into 4 slots instead of 6 + a 3-slot string. reviewedBy shares a
+    ///      slot with campaignId, so recording the auditor later overwrites a non-empty
+    ///      slot, which is far cheaper than filling an empty one.
     struct Milestone {
-        uint256 campaignId;
-        address beneficiary;
-        uint256 amount; // in token units (MockUSDC has 6 decimals)
-        string evidenceCID; // IPFS CID of receipts, photos or other supporting documents
-        MilestoneStatus status;
-        uint256 submittedAt;
-        address reviewedBy; // auditor who approved or rejected it
+        address beneficiary; // slot 0
+        MilestoneStatus status; // slot 0
+        uint40 submittedAt; // slot 0
+        address reviewedBy; // slot 1; auditor who approved or rejected it
+        uint96 campaignId; // slot 1
+        uint256 amount; // slot 2; in token units (MockUSDC has 6 decimals)
+        bytes32 evidenceHash; // slot 3; keccak256 of the evidence CID (full CID is in the event)
     }
 
-    IProjectRegistry public registry;
-    IDonationVault public vault;
+    IProjectRegistry public immutable registry;
+    IDonationVault public immutable vault;
 
     /// @notice Id the next milestone will get. Ids start at 1; 0 never exists.
     uint256 public nextMilestoneId = 1;
 
     mapping(uint256 => Milestone) private milestones;
 
+    /// @notice The only place the full evidence CID is published.
     event MilestoneSubmitted(
         uint256 indexed milestoneId,
         uint256 indexed campaignId,
@@ -114,13 +121,13 @@ contract MilestoneDisbursement is AccessControlBase {
         nextMilestoneId = milestoneId + 1;
 
         milestones[milestoneId] = Milestone({
-            campaignId: campaignId,
             beneficiary: beneficiary,
-            amount: amount,
-            evidenceCID: evidenceCID,
             status: MilestoneStatus.Submitted,
-            submittedAt: block.timestamp,
-            reviewedBy: address(0)
+            submittedAt: uint40(block.timestamp),
+            reviewedBy: address(0),
+            campaignId: SafeCast.toUint96(campaignId),
+            amount: amount,
+            evidenceHash: keccak256(bytes(evidenceCID))
         });
 
         emit MilestoneSubmitted(milestoneId, campaignId, beneficiary, amount, evidenceCID);

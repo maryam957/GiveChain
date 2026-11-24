@@ -250,10 +250,16 @@ describe("Security scenarios", function () {
             expect(await milestones.milestoneCount()).to.equal(0n);
         });
 
-        it("records the exact evidence CID on-chain so it cannot be swapped later", async function () {
+        it("fixes the evidence on-chain so it cannot be swapped later", async function () {
             const { milestones } = await loadFixture(withApprovedMilestone);
-            expect((await milestones.getMilestone(1)).evidenceCID).to.equal(EVIDENCE_CID);
-            // There is no function that changes evidenceCID after submission.
+            // The full CID is published in the MilestoneSubmitted event...
+            const [event] = await milestones.queryFilter(milestones.filters.MilestoneSubmitted(1));
+            expect(event.args.evidenceCID).to.equal(EVIDENCE_CID);
+            // ...and storage keeps its hash, so anyone can verify the CID they were shown.
+            const stored = (await milestones.getMilestone(1)).evidenceHash;
+            expect(stored).to.equal(ethers.id(event.args.evidenceCID));
+            expect(stored).to.not.equal(ethers.id("bafy-some-other-file"));
+            // There is no function that changes the evidence after submission.
             expect(milestones.interface.fragments.map((f) => f.name)).to.not.include(
                 "updateEvidence"
             );

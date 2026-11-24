@@ -3,6 +3,7 @@ pragma solidity ^0.8.28;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import "./AccessControlBase.sol";
 import "./interfaces/IDonationVault.sol";
 import "./interfaces/IProjectRegistry.sol";
@@ -20,11 +21,14 @@ contract DonationVault is AccessControlBase, IDonationVault {
     using SafeERC20 for IERC20;
 
     /// @notice Money totals for one campaign, in token units.
+    /// @dev Gas: four uint128 values packed into two slots instead of four. Values that
+    ///      change together share a slot: a payout updates reserved and released, so
+    ///      it writes one slot instead of two. uint128 holds up to 3.4e38 units.
     struct CampaignFunds {
-        uint256 donated; // all donations ever received
-        uint256 reserved; // set aside for approved, not yet paid milestones
-        uint256 released; // paid to beneficiaries
-        uint256 refunded; // returned to donors
+        uint128 reserved; // slot 0; set aside for approved, not yet paid milestones
+        uint128 released; // slot 0; paid to beneficiaries
+        uint128 donated; // slot 1; all donations ever received
+        uint128 refunded; // slot 1; returned to donors
     }
 
     enum ReservationStatus {
@@ -35,18 +39,19 @@ contract DonationVault is AccessControlBase, IDonationVault {
     }
 
     /// @notice Money set aside for one milestone. Beneficiary and amount are fixed here.
+    /// @dev Gas: packed into two slots instead of four.
     struct Reservation {
-        uint256 campaignId;
-        address beneficiary;
-        uint256 amount;
-        ReservationStatus status;
+        address beneficiary; // slot 0
+        ReservationStatus status; // slot 0
+        uint128 campaignId; // slot 1
+        uint128 amount; // slot 1
     }
 
     /// @notice The donation token (MockUSDC).
-    IERC20 public token;
+    IERC20 public immutable token;
 
     /// @notice Source of campaign status and beneficiary eligibility.
-    IProjectRegistry public registry;
+    IProjectRegistry public immutable registry;
 
     /// @notice The only contract allowed to reserve, release or cancel. Set once.
     address public disbursementContract;
@@ -143,7 +148,7 @@ contract DonationVault is AccessControlBase, IDonationVault {
             revert CampaignNotActive(campaignId);
         }
 
-        campaignFunds[campaignId].donated += amount;
+        campaignFunds[campaignId].donated += SafeCast.toUint128(amount);
         contributions[campaignId][msg.sender] += amount;
 
         token.safeTransferFrom(msg.sender, address(this), amount);
@@ -157,7 +162,8 @@ contract DonationVault is AccessControlBase, IDonationVault {
         uint256 amount = _refundableAmount(campaignId, msg.sender, true);
 
         refundClaimed[campaignId][msg.sender] = true;
-        campaignFunds[campaignId].refunded += amount;
+        // Safe cast: amount <= donated - released, which fits in uint128.
+        campaignFunds[campaignId].refunded += uint128(amount);
 
         token.safeTransfer(msg.sender, amount);
 
@@ -187,12 +193,13 @@ contract DonationVault is AccessControlBase, IDonationVault {
             revert InsufficientCampaignFunds(campaignId, amount, available);
         }
 
-        campaignFunds[campaignId].reserved += amount;
+        // Safe cast: amount <= available, which fits in uint128.
+        campaignFunds[campaignId].reserved += uint128(amount);
         reservations[milestoneId] = Reservation({
-            campaignId: campaignId,
             beneficiary: beneficiary,
-            amount: amount,
-            status: ReservationStatus.Reserved
+            status: ReservationStatus.Reserved,
+            campaignId: SafeCast.toUint128(campaignId),
+            amount: uint128(amount)
         });
 
         emit FundsReserved(campaignId, milestoneId, beneficiary, amount);
@@ -205,7 +212,9 @@ contract DonationVault is AccessControlBase, IDonationVault {
         whenNotPaused
         nonReentrant
     {
-        Reservation storage reservation = reservations[milestoneId];
+        // Gas: read the packed reservation once into memory (2 slots) instead of
+        // re-reading storage for every field.
+        Reservation memory reservation = reservations[milestoneId];
         if (reservation.status != ReservationStatus.Reserved) {
             revert InvalidReservationStatus(milestoneId, reservation.status);
         }
@@ -214,9 +223,10 @@ contract DonationVault is AccessControlBase, IDonationVault {
         }
 
         // Effects before the token transfer (checks-effects-interactions).
-        reservation.status = ReservationStatus.Released;
-        campaignFunds[reservation.campaignId].reserved -= reservation.amount;
-        campaignFunds[reservation.campaignId].released += reservation.amount;
+        reservations[milestoneId].status = ReservationStatus.Released;
+        CampaignFunds storage funds = campaignFunds[reservation.campaignId];
+        funds.reserved -= reservation.amount; // same slot as `released`
+        funds.released += reservation.amount;
 
         token.safeTransfer(reservation.beneficiary, reservation.amount);
 
@@ -230,12 +240,12 @@ contract DonationVault is AccessControlBase, IDonationVault {
 
     /// @inheritdoc IDonationVault
     function cancelReservation(uint256 milestoneId) external onlyDisbursement whenNotPaused {
-        Reservation storage reservation = reservations[milestoneId];
+        Reservation memory reservation = reservations[milestoneId];
         if (reservation.status != ReservationStatus.Reserved) {
             revert InvalidReservationStatus(milestoneId, reservation.status);
         }
 
-        reservation.status = ReservationStatus.Cancelled;
+        reservations[milestoneId].status = ReservationStatus.Cancelled;
         campaignFunds[reservation.campaignId].reserved -= reservation.amount;
 
         emit ReservationCancelled(reservation.campaignId, milestoneId, reservation.amount);
@@ -249,15 +259,15 @@ contract DonationVault is AccessControlBase, IDonationVault {
     /// @dev Never reverts: returns 0 if reservations exceed what the campaign still holds
     ///      (possible after a closed campaign's refunds).
     function availableBalance(uint256 campaignId) public view returns (uint256) {
-        CampaignFunds storage funds = campaignFunds[campaignId];
-        uint256 held = funds.donated - funds.released - funds.refunded;
+        CampaignFunds memory funds = campaignFunds[campaignId];
+        uint256 held = uint256(funds.donated) - funds.released - funds.refunded;
         return held > funds.reserved ? held - funds.reserved : 0;
     }
 
     /// @notice Tokens the vault still holds for a campaign (reserved or not).
     function heldBalance(uint256 campaignId) external view returns (uint256) {
-        CampaignFunds storage funds = campaignFunds[campaignId];
-        return funds.donated - funds.released - funds.refunded;
+        CampaignFunds memory funds = campaignFunds[campaignId];
+        return uint256(funds.donated) - funds.released - funds.refunded;
     }
 
     /// @notice What `donor` could claim right now from `campaignId` (0 if nothing).
