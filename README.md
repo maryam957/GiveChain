@@ -15,7 +15,8 @@ A blockchain-based NGO donation platform. Donations sit in a smart-contract vaul
 | `scripts/` | Deployment and demo scripts |
 | `backend/` | Node.js indexer and IPFS service (Phase 6) |
 | `frontend/` | React app (Phase 7) |
-| `docs/` | Plan, security package, gas sheet |
+| `docs/` | Plan, architecture, security package, gas sheet |
+| `legacy/` | First ETH-based prototype, kept for reference (not compiled) |
 
 ## Quick start
 
@@ -32,7 +33,7 @@ npm test
 | `npm test` | Runs all contract tests on a temporary local chain |
 | `npm run test:gas` | Runs the tests and prints a gas report |
 | `npm run node` | Starts a local blockchain at `http://127.0.0.1:8545` |
-| `npm run deploy:local` | Deploys the contracts to the local blockchain (run `npm run node` first, in another terminal) |
+| `npm run deploy:local` | Deploys the contracts to the local blockchain (run `npm run node` first, in another terminal). Available again from Phase 5. |
 
 ## Configuration
 

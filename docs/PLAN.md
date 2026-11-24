@@ -15,7 +15,7 @@ These are business rules the spec leaves open. Change any of them before Phase 1
 | R5 | When are refunds allowed? | When a campaign is **Completed or Cancelled**. Each donor claims once: their share of the money not yet paid out (pro-rata). *Refined in Phase 1: Completed was added so leftover money can't get stuck.* |
 | R6 | Milestone states | `Submitted → Approved → Released → Confirmed`, or `Submitted → Rejected`, or `Approved → Cancelled`. Approve **reserves** the campaign's money; Release (by the campaign's NGO) pays the beneficiary; Confirm is done by the beneficiary. *Phase 1 added Cancel (auditor), which frees the money if a beneficiary is revoked after approval.* |
 | R7 | Emergency stop | One system-wide pause switch in `GiveChainAccess`, which also holds all roles, so every role is granted once. |
-| R11 | Separation of duties | An auditor cannot approve milestones for a campaign whose NGO wallet is their own. |
+| R11 | Separation of duties | One wallet can never hold both the NGO and Auditor roles (enforced in `GiveChainAccess`, Phase 2a). MilestoneDisbursement also checks that the approver is not the campaign's NGO. |
 | R12 | Vault link | The vault accepts payout calls only from the MilestoneDisbursement address, set once after deployment and never changeable. |
 | R8 | Evidence files | Stored on IPFS; only the CID goes on-chain. A milestone without a CID is rejected. |
 | R9 | Beneficiary privacy | On-chain: wallet + salted hash of the ID only. Auditor can revoke a beneficiary. |
@@ -47,6 +47,10 @@ These are business rules the spec leaves open. Change any of them before Phase 1
 | 2d | `MilestoneDisbursement` | Separate approve / release / confirm-receipt steps (R6), talks to the others only through interfaces | 5 |
 
 Custom errors and NatSpec comments are used in every contract.
+
+Phase 2 contracts are written for **clarity first**. They become the documented gas baseline in Phase 4, where the optimizations (immutable addresses, struct packing, `bytes32` CIDs, ...) are applied and measured against them.
+
+Progress: **2a done** (GiveChainAccess, AccessControlBase, MockUSDC; 37 tests).
 
 **Done when:** all unit tests for each contract pass, including the full happy path: create campaign → register and approve beneficiary → donate → submit → approve → release → confirm.
 

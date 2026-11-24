@@ -137,6 +137,8 @@ Contract-to-contract permission: only the `MilestoneDisbursement` address may ca
 
 **What the admin cannot do:** move money, approve beneficiaries or approve milestones. The admin manages people, not funds.
 
+**Separation of duties:** `GiveChainAccess` refuses to give one wallet both the NGO and the Auditor role. MilestoneDisbursement additionally refuses an approval from the campaign's own NGO wallet, in case roles change later.
+
 ## 4. State transitions
 
 ### Campaign
