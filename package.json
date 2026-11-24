@@ -13,7 +13,10 @@
     "gas": "hardhat run scripts/gas-benchmark.js",
     "backend": "npm --prefix backend start",
     "backend:install": "npm --prefix backend install",
-    "backend:test": "npm --prefix backend test"
+    "backend:test": "npm --prefix backend test",
+    "frontend": "npm --prefix frontend run dev",
+    "frontend:install": "npm --prefix frontend install",
+    "frontend:build": "npm --prefix frontend run build"
   },
   "keywords": [],
   "author": "",

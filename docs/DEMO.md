@@ -1,10 +1,10 @@
 # GiveChain Local Demo
 
-How to start a local blockchain with GiveChain deployed and filled with demo data.
+How to run GiveChain locally (blockchain, backend and website) with demo data, and a suggested demo script.
 
 ## 1. Start everything
 
-Use two terminals in the project folder.
+Use four terminals in the project folder.
 
 **Terminal 1** (keep it running):
 
@@ -28,6 +28,14 @@ npm run backend
 ```
 
 The backend indexes the chain and serves the API at `http://localhost:4000` (try `http://localhost:4000/api/stats`). It follows chain restarts and redeploys by itself.
+
+**Terminal 4** (keep it running):
+
+```bash
+npm run frontend
+```
+
+Open **http://localhost:5173**. Connect with MetaMask, or pick a demo account from the wallet menu (local chain only; no keys needed).
 
 Stopping terminal 1 wipes the chain. After a restart, run both commands again.
 
@@ -80,3 +88,21 @@ npx hardhat run scripts/deploy.js --network sepolia
 ```
 
 The seed script is for local chains only.
+
+## 5. Suggested live demo script (about 8 minutes)
+
+Each step uses a different demo account from the wallet menu, so each team member can drive one role.
+
+| # | Account | Do this | What it proves |
+|---|---|---|---|
+| 1 | (none) | Home page, then **Transparency**: point at "Independent check ✓ matches" | Anyone can verify the totals against the chain |
+| 2 | Donor B | Open *Winter Food Packages*, donate 100 | Wallet transaction with Confirm in wallet → Pending → Confirmed |
+| 3 | Auditor | Dashboard → open the evidence of payment #3, then **Approve and reserve money** | Independent approval; evidence is an IPFS file verified against its CID |
+| 4 | NGO 1 | Dashboard → **Release payment** #2 | Money goes from the vault straight to the beneficiary, never to the NGO |
+| 5 | Beneficiary 2 | Dashboard → **Confirm I received it** | Beneficiary confirmation closes the loop |
+| 6 | NGO 1 | Try to register Beneficiary 1's wallet again | **Security failure, shown live:** "This wallet is already registered in this campaign" |
+| 7 | Donor A | Open *Clean Water Pilot* → **Claim 300** | Refunds from a cancelled campaign |
+| 8 | Admin | Dashboard → **Pause everything** | Red banner on every page; all transactions blocked. Then unpause. |
+| 9 | (terminal) | `npx hardhat test test/Security.test.js` | The reentrancy attack that steals from the vulnerable vault but fails against GiveChain |
+
+With MetaMask instead of demo accounts: import the matching Hardhat keys (printed by `npm run node`) and switch accounts in MetaMask between steps.

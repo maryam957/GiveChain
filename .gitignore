@@ -34,3 +34,9 @@ deployments/*.seed.json
 
 # Backend local IPFS store (rebuilt from seed-data and uploads)
 backend/storage/
+
+# Local editor/assistant settings
+.claude/
+
+# Frontend build output
+frontend/dist/

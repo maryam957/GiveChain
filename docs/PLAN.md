@@ -106,6 +106,8 @@ Built in this order, each usable before the next starts:
 
 **Done when:** the whole story can be clicked through in the browser with four MetaMask accounts.
 
+Progress: **Phase 7 done.** React + Vite + ethers.js site with MetaMask, on-chain role detection, honest transaction states, decoded contract errors, and NGO / Auditor / Beneficiary / Donor / Admin dashboards. Tested in a browser on a live local chain: donate, auditor approvals, NGO campaign creation and payout, a deliberate duplicate-registration failure, beneficiary confirmation, refund claim, pause banner, transparency check, phone layout. **Not yet tested:** the MetaMask extension itself (the test browser has none; it used the local-chain demo accounts), evidence file upload through the website form (covered by API tests), and the Pause / role buttons (the pause was triggered from the command line).
+
 ## Phase 8 — Integration and hand-in
 
 - Full end-to-end run on a fresh machine using only the README.
