@@ -12,9 +12,11 @@ These are business rules the spec leaves open. Change any of them before Phase 1
 | R2 | Who are the roles? | Admin, NGO, **Auditor** (kept from the current code), Pauser. Donors and beneficiaries need no role. |
 | R3 | Who approves? | Only an Auditor approves beneficiaries and milestones. An NGO can never approve its own. |
 | R4 | Campaign states | `Active → Completed` (NGO closes it) or `Active → Cancelled` (NGO or Admin). Donations only while Active. |
-| R5 | When are refunds allowed? | Only when a campaign is **Cancelled**. Each donor gets back their fair share of the money not yet promised to a milestone (pro-rata), once. |
-| R6 | Milestone states | `Submitted → Approved → Released → Confirmed`, or `Submitted → Rejected`. Approve **reserves** the campaign's money; Release (by the campaign's NGO) pays the beneficiary; Confirm is done by the beneficiary. |
-| R7 | Emergency stop | One system-wide pause switch that all three contracts respect. |
+| R5 | When are refunds allowed? | When a campaign is **Completed or Cancelled**. Each donor claims once: their share of the money not yet paid out (pro-rata). *Refined in Phase 1: Completed was added so leftover money can't get stuck.* |
+| R6 | Milestone states | `Submitted → Approved → Released → Confirmed`, or `Submitted → Rejected`, or `Approved → Cancelled`. Approve **reserves** the campaign's money; Release (by the campaign's NGO) pays the beneficiary; Confirm is done by the beneficiary. *Phase 1 added Cancel (auditor), which frees the money if a beneficiary is revoked after approval.* |
+| R7 | Emergency stop | One system-wide pause switch in `GiveChainAccess`, which also holds all roles, so every role is granted once. |
+| R11 | Separation of duties | An auditor cannot approve milestones for a campaign whose NGO wallet is their own. |
+| R12 | Vault link | The vault accepts payout calls only from the MilestoneDisbursement address, set once after deployment and never changeable. |
 | R8 | Evidence files | Stored on IPFS; only the CID goes on-chain. A milestone without a CID is rejected. |
 | R9 | Beneficiary privacy | On-chain: wallet + salted hash of the ID only. Auditor can revoke a beneficiary. |
 | R10 | Network | Hardhat local chain for the demo. Sepolia testnet is optional at the end. |
@@ -39,7 +41,7 @@ These are business rules the spec leaves open. Change any of them before Phase 1
 
 | Step | Contract | What changes | Fixes problem |
 |---|---|---|---|
-| 2a | `MockUSDC` + `AccessControlBase` | Test token; shared roles; system-wide pause | 4, 7 |
+| 2a | `MockUSDC` + `GiveChainAccess` + `AccessControlBase` | Test token; roles and the system-wide pause in one place | 4, 7 |
 | 2b | `ProjectRegistry` | Campaign target, metadata CID, status changes (R4), beneficiary revoke, implements `IProjectRegistry` | 5 |
 | 2c | `DonationVault` | **Separate balance per campaign**, per-campaign donor records, refunds by rule R5, safe ERC-20 transfers, checks beneficiary + balance + "already paid?" itself before paying | 1, 2, 3 |
 | 2d | `MilestoneDisbursement` | Separate approve / release / confirm-receipt steps (R6), talks to the others only through interfaces | 5 |
