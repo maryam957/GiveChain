@@ -61,6 +61,8 @@ Progress: **2a done** (GiveChainAccess, AccessControlBase, MockUSDC; 37 tests). 
 
 **Done when:** every threat in the document points to a passing test.
 
+Progress: **Phase 3 done.** `test/Security.test.js` has 32 tests covering S1–S8 and five project-specific misuse scenarios (M1–M5), including a reentrancy attack through a malicious token and a control test against a deliberately vulnerable vault. 220 tests passing in total.
+
 ## Phase 4 — Gas report
 
 - Keep a "before" copy of the contracts as the baseline.
