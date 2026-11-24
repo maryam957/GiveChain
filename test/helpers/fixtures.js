@@ -105,14 +105,72 @@ async function deployVaultFixture() {
     return { ...ctx, vault, caller };
 }
 
+/** Milestone status enum, mirroring MilestoneDisbursement. */
+const MilestoneStatus = {
+    None: 0n,
+    Submitted: 1n,
+    Approved: 2n,
+    Rejected: 3n,
+    Released: 4n,
+    Cancelled: 5n,
+    Confirmed: 6n,
+};
+
+/** A sample evidence CID used in tests. */
+const EVIDENCE_CID = "bafybeihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku";
+
+/**
+ * The full real system: GiveChainAccess, MockUSDC, ProjectRegistry, DonationVault and
+ * MilestoneDisbursement, with the vault linked to MilestoneDisbursement.
+ * Campaign 1 (owned by `ngo`) has `beneficiary` and `beneficiary2` approved, and
+ * `donor` has donated 1,000 mUSDC to it. Both donors hold tokens and have approved the vault.
+ */
+async function deploySystemFixture() {
+    const ctx = await deployRegistryWithCampaignFixture();
+    const { registry, token, access, ngo, auditor, beneficiary, beneficiary2, donor, donor2 } =
+        ctx;
+
+    await registry
+        .connect(ngo)
+        .registerBeneficiary(1, beneficiary.address, identityCommitment("s1", "id-1"));
+    await registry
+        .connect(ngo)
+        .registerBeneficiary(1, beneficiary2.address, identityCommitment("s2", "id-2"));
+    await registry.connect(auditor).approveBeneficiary(1, beneficiary.address);
+    await registry.connect(auditor).approveBeneficiary(1, beneficiary2.address);
+
+    const vault = await (await ethers.getContractFactory("DonationVault")).deploy(
+        await access.getAddress(),
+        await registry.getAddress(),
+        await token.getAddress()
+    );
+    const milestones = await (await ethers.getContractFactory("MilestoneDisbursement")).deploy(
+        await access.getAddress(),
+        await registry.getAddress(),
+        await vault.getAddress()
+    );
+    await vault.setDisbursementContract(await milestones.getAddress());
+
+    for (const d of [donor, donor2]) {
+        await token.connect(d).faucet(USDC(10000));
+        await token.connect(d).approve(await vault.getAddress(), ethers.MaxUint256);
+    }
+    await vault.connect(donor).donate(1, USDC(1000));
+
+    return { ...ctx, vault, milestones };
+}
+
 module.exports = {
     USDC,
     identityCommitment,
     CampaignStatus,
     BeneficiaryStatus,
     ReservationStatus,
+    MilestoneStatus,
     SAMPLE_CID,
+    EVIDENCE_CID,
     deployRegistryFixture,
     deployRegistryWithCampaignFixture,
     deployVaultFixture,
+    deploySystemFixture,
 };
