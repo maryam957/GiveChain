@@ -9,6 +9,8 @@ const cors = require("cors");
 const multer = require("multer");
 const { ethers } = require("ethers");
 const { IpfsError, ALLOWED_TYPES } = require("../ipfs/ipfsService");
+const { createAccountsRouter } = require("./accountsRoutes");
+const { AccountError } = require("../accounts/accountsService");
 
 /** Converts BigInt, Map and Set into plain JSON values (amounts become strings). */
 function toPlain(value) {
@@ -61,11 +63,23 @@ const METADATA_FIELDS = {
  * @param {() => object|null} deps.getDeployment  Current deployment file contents.
  * @param {() => object} [deps.getStatus]         Extra health information.
  * @param {string} [deps.corsOrigin]
+ * @param {import("../accounts/accountsService").AccountsService} [deps.accounts]
+ *        When given, user accounts are enabled and IPFS uploads require a login.
+ * @param {boolean} [deps.secureCookies]
  */
-function createApp({ store, ipfs, getDeployment, getStatus = () => ({}), corsOrigin = "*" }) {
+function createApp({ store, ipfs, getDeployment, getStatus = () => ({}), corsOrigin = "*", accounts = null, secureCookies = false }) {
     const app = express();
-    app.use(cors({ origin: corsOrigin }));
+    app.use(cors({ origin: corsOrigin, credentials: true }));
     app.use(express.json({ limit: "100kb" }));
+
+    if (accounts) {
+        app.use("/api", createAccountsRouter({ accounts, secureCookies }));
+    }
+    // With accounts enabled, only logged-in users may store files on IPFS.
+    const requireLoginForUpload = (req, res, next) => {
+        if (accounts && !req.user) return res.status(401).json({ error: "Please log in to upload files." });
+        next();
+    };
 
     const upload = multer({
         storage: multer.memoryStorage(),
@@ -280,7 +294,7 @@ function createApp({ store, ipfs, getDeployment, getStatus = () => ({}), corsOri
 
     // -------------------------------------------------------------------- IPFS
 
-    app.post("/api/ipfs", upload.single("file"), route(async (req) => {
+    app.post("/api/ipfs", requireLoginForUpload, upload.single("file"), route(async (req) => {
         if (!req.file) throw new HttpError(400, 'Send the file as multipart form field "file"');
         return ipfs.add(req.file.buffer, {
             filename: req.file.originalname,
@@ -288,7 +302,7 @@ function createApp({ store, ipfs, getDeployment, getStatus = () => ({}), corsOri
         });
     }));
 
-    app.post("/api/ipfs/json", route(async (req) => {
+    app.post("/api/ipfs/json", requireLoginForUpload, route(async (req) => {
         const body = req.body || {};
         if (typeof body.title !== "string" || !body.title.trim()) {
             throw new HttpError(400, "A title is required");
@@ -330,7 +344,7 @@ function createApp({ store, ipfs, getDeployment, getStatus = () => ({}), corsOri
         } else if (err.type === "entity.too.large") {
             status = 413;
         }
-        if (status >= 500 && !(err instanceof IpfsError)) message = "Internal error";
+        if (status >= 500 && !(err instanceof IpfsError) && !(err instanceof AccountError)) message = "Internal error";
         res.status(status).json({ error: message });
     });
 

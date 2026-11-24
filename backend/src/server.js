@@ -16,6 +16,11 @@ const { Store } = require("./indexer/store");
 const { Indexer } = require("./indexer/indexer");
 const { IpfsService } = require("./ipfs/ipfsService");
 const { createApp } = require("./api/app");
+const { JsonDb } = require("./accounts/jsonDb");
+const { AccountsService } = require("./accounts/accountsService");
+
+const LOCAL_CHAIN_ID = 31337;
+const DEMO_USERS_FILE = path.join(__dirname, "..", "demo-users.json");
 
 const log = (message) => console.log(`[${new Date().toISOString().slice(11, 19)}] ${message}`);
 
@@ -36,6 +41,17 @@ async function main() {
     const imported = await ipfs.importDirectory(config.seedDataDir);
     log(`IPFS mode: ${ipfs.mode}. Imported ${imported.length} demo files into the local store.`);
 
+    const db = new JsonDb(config.accountsDbFile);
+    const accounts = new AccountsService({ db, store });
+    let demoUsersChecked = false;
+    function importDemoUsersIfLocal(chainId) {
+        if (demoUsersChecked || Number(chainId) !== LOCAL_CHAIN_ID || !fs.existsSync(DEMO_USERS_FILE)) return;
+        demoUsersChecked = true;
+        const demo = JSON.parse(fs.readFileSync(DEMO_USERS_FILE, "utf8"));
+        const created = accounts.importDemoUsers(demo.users.map((u) => ({ ...u, password: demo.password })));
+        if (created) log(`Created ${created} local demo accounts (see docs/DEMO.md for logins).`);
+    }
+
     let deployment = null;
     let deploymentMtime = 0;
     let indexer = null;
@@ -54,6 +70,7 @@ async function main() {
             if (indexer) indexer.setDeployment(deployment);
             else indexer = new Indexer({ provider, deployment, store, log });
             log(`Loaded deployment for "${deployment.network}" (chain ${deployment.chainId}). Indexing from block ${deployment.startBlock}.`);
+            importDemoUsersIfLocal(deployment.chainId);
         }
         try {
             await indexer.sync();
@@ -77,6 +94,8 @@ async function main() {
             chainError: lastError,
         }),
         corsOrigin: config.corsOrigin,
+        accounts,
+        secureCookies: process.env.NODE_ENV === "production",
     });
     app.listen(config.port, () => {
         log(`GiveChain backend listening on http://localhost:${config.port}`);

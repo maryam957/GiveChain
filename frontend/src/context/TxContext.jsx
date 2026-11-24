@@ -12,6 +12,8 @@ import { createContext, useCallback, useContext, useState } from "react";
 import { api } from "../lib/api";
 import { describeError } from "../lib/errors";
 import { useWeb3 } from "./Web3Context";
+import { useAuth } from "./AuthContext";
+import { sameAddress, shortAddress } from "../lib/format";
 
 const TxContext = createContext(null);
 export const useTx = () => useContext(TxContext);
@@ -33,7 +35,8 @@ async function waitForBackend(blockNumber, timeoutMs = 10000) {
 }
 
 export function TxProvider({ children }) {
-    const { signer, wrongNetwork, refresh, config } = useWeb3();
+    const { signer, account, wrongNetwork, refresh, config } = useWeb3();
+    const { user } = useAuth();
     const [toasts, setToasts] = useState([]);
 
     const update = (id, patch) => setToasts((list) => list.map((t) => (t.id === id ? { ...t, ...patch } : t)));
@@ -50,7 +53,14 @@ export function TxProvider({ children }) {
             const add = (t) => setToasts((list) => [...list.slice(-4), { id, label, chainId: config?.chainId, ...t }]);
 
             if (!signer) {
-                add({ status: "failed", message: "Connect a wallet first." });
+                add({ status: "failed", message: "Connect MetaMask first." });
+                return null;
+            }
+            if (user?.wallet && !sameAddress(user.wallet, account)) {
+                add({
+                    status: "failed",
+                    message: `MetaMask is on ${shortAddress(account)}, but your account's wallet is ${shortAddress(user.wallet)}. Switch accounts in MetaMask.`,
+                });
                 return null;
             }
             if (wrongNetwork) {
@@ -90,7 +100,7 @@ export function TxProvider({ children }) {
                 return null;
             }
         },
-        [signer, wrongNetwork, refresh, dismiss, config]
+        [signer, account, user, wrongNetwork, refresh, dismiss, config]
     );
 
     return <TxContext.Provider value={{ runTx, toasts, dismiss }}>{children}</TxContext.Provider>;

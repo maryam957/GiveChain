@@ -40,3 +40,6 @@ backend/storage/
 
 # Frontend build output
 frontend/dist/
+
+# Backend user accounts database (local)
+backend/data/

@@ -1,28 +1,25 @@
 import { Link } from "react-router-dom";
 import { api } from "../lib/api";
 import { useData } from "../lib/useData";
-import { Amount, Empty, ErrorNote, Loading, Progress, StatusBadge } from "../components/ui";
-
-const STEPS = [
-    ["Donate", "Donors send test dollars (mUSDC) to a campaign. The money goes into a smart-contract vault, never to the NGO."],
-    ["Register people", "The NGO registers the people it wants to help. An independent auditor must approve each one."],
-    ["Request a payment", "The NGO asks to pay a specific person, with evidence (receipts, photos) stored on IPFS."],
-    ["Approve and pay", "An auditor checks the evidence and approves. The vault then pays the person's wallet directly."],
-];
+import { useAuth } from "../context/AuthContext";
+import { Address, Amount, Empty, ErrorNote, Loading, Page, Progress, StatusBadge } from "../components/ui";
 
 export function CampaignCard({ c }) {
     return (
         <Link to={`/campaigns/${c.id}`} className="campaign-card">
             <div className="campaign-card-top">
-                <span className="small muted">{c.metadata?.category || "Campaign"} · #{c.id}</span>
+                <span className="small muted">{c.metadata?.category || "Campaign"}</span>
                 <StatusBadge status={c.status} />
             </div>
             <h3>{c.metadata?.title || `Campaign #${c.id}`}</h3>
-            <p className="muted">{c.metadata?.summary || c.metadataError || ""}</p>
+            <p className="muted">{c.metadata?.summary || ""}</p>
+            <div className="small">
+                by <Address value={c.ngo} />
+            </div>
             <Progress value={c.donated} max={c.targetAmount} />
             <div className="campaign-card-numbers">
                 <span>
-                    <Amount value={c.donated} /> <span className="muted">of</span> <Amount value={c.targetAmount} />
+                    <strong><Amount value={c.donated} /></strong> <span className="muted">of</span> <Amount value={c.targetAmount} />
                 </span>
                 <span className="small muted">
                     {c.donorCount} donors · {c.approvedBeneficiaryCount} people approved
@@ -33,18 +30,34 @@ export function CampaignCard({ c }) {
 }
 
 export default function Home() {
-    const campaigns = useData(() => api.campaigns());
+    const { user } = useAuth();
+    const campaigns = useData(() => api.campaigns("?status=Active"));
     const stats = useData(() => api.stats());
 
     return (
-        <>
+        <Page>
             <section className="hero">
-                <h1>Donations controlled by code, not by trust.</h1>
+                <span className="eyebrow">Transparent giving, enforced by smart contracts</span>
+                <h1>Your donation goes to the people it was meant for. You can check every step.</h1>
                 <p className="lead">
-                    GiveChain keeps donated money in a smart contract. It only leaves the vault as a direct payment to an
-                    approved person, after an independent auditor has checked the evidence. Every step is public on the
-                    blockchain.
+                    Donations are held by a smart contract, not by the charity. Money is only released directly to a
+                    registered person's wallet, after an independent verifier has checked the evidence.
                 </p>
+                <div className="row">
+                    <Link to="/campaigns" className="button large">
+                        Donate to a campaign
+                    </Link>
+                    {!user && (
+                        <Link to="/signup" className="button secondary large">
+                            Join as an NGO, verifier or beneficiary
+                        </Link>
+                    )}
+                    {user && (
+                        <Link to="/app" className="button secondary large">
+                            Go to my portal
+                        </Link>
+                    )}
+                </div>
                 {stats.data && (
                     <div className="hero-stats">
                         <div>
@@ -60,31 +73,43 @@ export default function Home() {
                             <span>people assisted</span>
                         </div>
                         <div>
-                            <Link to="/transparency">See every transaction →</Link>
+                            <Link to="/transparency">Check every transaction →</Link>
                         </div>
                     </div>
                 )}
             </section>
 
-            <section className="steps">
-                {STEPS.map(([title, text], i) => (
-                    <div className="step" key={title}>
-                        <div className="step-number">{i + 1}</div>
-                        <h3>{title}</h3>
-                        <p className="muted">{text}</p>
-                    </div>
-                ))}
+            <section className="trust-strip">
+                <div>
+                    <strong>The NGO never holds the money</strong>
+                    <span>Funds stay in the vault contract until a payment is approved.</span>
+                </div>
+                <div>
+                    <strong>Independent verifiers</strong>
+                    <span>Every beneficiary and every payment is approved by someone other than the NGO.</span>
+                </div>
+                <div>
+                    <strong>Public and permanent</strong>
+                    <span>Every donation, approval and payment is recorded on the blockchain.</span>
+                </div>
+                <div>
+                    <strong>Refunds built in</strong>
+                    <span>If a campaign closes, donors can claim back their share of unspent money.</span>
+                </div>
             </section>
 
-            <h2 className="section-title">Campaigns</h2>
+            <div className="page-head">
+                <h2>Active campaigns</h2>
+                <Link to="/campaigns">See all campaigns →</Link>
+            </div>
             {campaigns.loading && !campaigns.data && <Loading />}
             <ErrorNote error={campaigns.error} />
-            {campaigns.data && campaigns.data.length === 0 && <Empty>No campaigns yet.</Empty>}
+            {campaigns.data && campaigns.data.length === 0 && <Empty>No active campaigns yet.</Empty>}
             <div className="campaign-grid">
-                {campaigns.data?.map((c) => (
+                {campaigns.data?.slice(0, 6).map((c) => (
                     <CampaignCard key={c.id} c={c} />
                 ))}
             </div>
-        </>
+        </Page>
     );
 }

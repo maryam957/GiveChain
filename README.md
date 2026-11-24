@@ -2,7 +2,7 @@
 
 A blockchain-based NGO donation platform. Donations sit in a smart-contract vault, and money only leaves it when an independent auditor has approved the payment. Every donation, approval and payout can be checked on-chain.
 
-> See [docs/PLAN.md](docs/PLAN.md) for the phases and what is done.
+> **Documents:** [Report](docs/REPORT.md) · [Architecture](docs/ARCHITECTURE.md) · [Security package](docs/GiveChain-Security-Package.md) · [Gas sheet](docs/GiveChain-Gas-Sheet.md) · [Demo guide](docs/DEMO.md) · [Rubric checklist](docs/RUBRIC-CHECKLIST.md) · [Contributions](docs/CONTRIBUTIONS.md) · [Plan](docs/PLAN.md)
 
 ## Project layout
 
@@ -44,7 +44,7 @@ npm run backend         # 3. backend API at http://localhost:4000 (keep running)
 npm run frontend        # 4. website at http://localhost:5173 (keep running)
 ```
 
-Then open http://localhost:5173. Demo accounts, MetaMask settings and a demo script are in [docs/DEMO.md](docs/DEMO.md).
+Then open http://localhost:5173 and log in. Demo logins, MetaMask setup and a demo script are in [docs/DEMO.md](docs/DEMO.md).
 
 ## All commands
 
@@ -57,9 +57,10 @@ Then open http://localhost:5173. Demo accounts, MetaMask settings and a demo scr
 | `npm run deploy:local` | Deploys the contracts and writes `deployments/localhost.json` |
 | `npm run seed:local` | Demo campaigns, donations and payments |
 | `npm run backend` | Backend (IPFS + indexer + API) at `http://localhost:4000` |
-| `npm run backend:test` | Backend IPFS tests |
+| `npm run backend:test` | Backend IPFS and account tests |
 | `npm run frontend` | Website at `http://localhost:5173` |
 | `npm run frontend:build` | Production build of the website |
+| `npm run inspect -- 0xWALLET` | Reads a wallet's roles, balances and payments straight from the contracts |
 
 ## Configuration
 

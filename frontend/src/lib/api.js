@@ -1,20 +1,33 @@
-// Small wrapper around the GiveChain backend REST API (see backend/README.md).
+// Wrapper around the GiveChain backend REST API (see backend/README.md).
+// The session cookie is HttpOnly and same-origin, so the browser sends it automatically.
 
-async function request(path, options) {
+async function request(path, { method = "GET", body, form } = {}) {
+    const options = { method, credentials: "same-origin", headers: {} };
+    if (form) {
+        options.body = form;
+    } else if (body !== undefined) {
+        options.headers["Content-Type"] = "application/json";
+        options.body = JSON.stringify(body);
+    }
     const res = await fetch(`/api${path}`, options);
-    let body = null;
+    let data = null;
     try {
-        body = await res.json();
+        data = await res.json();
     } catch {
-        // non-JSON response
+        // empty or non-JSON response
     }
     if (!res.ok) {
-        throw new Error(body?.error || `Request failed (${res.status})`);
+        const err = new Error(data?.error || `Request failed (${res.status})`);
+        err.status = res.status;
+        throw err;
     }
-    return body;
+    return data;
 }
 
+const post = (path, body) => request(path, { method: "POST", body: body ?? {} });
+
 export const api = {
+    // Public blockchain index
     health: () => request("/health"),
     config: () => request("/config"),
     stats: () => request("/stats"),
@@ -24,21 +37,37 @@ export const api = {
     donor: (address) => request(`/donors/${address}`),
     beneficiary: (address) => request(`/beneficiaries/${address}`),
     activity: (query = "") => request(`/activity${query}`),
+    profiles: () => request("/profiles"),
 
-    /** Uploads one evidence file to IPFS through the backend. Returns { cid, ... }. */
+    // Accounts
+    me: () => request("/auth/me"),
+    signup: (data) => post("/auth/signup", data),
+    login: (email, password) => post("/auth/login", { email, password }),
+    logout: () => post("/auth/logout"),
+    updateProfile: (data) => request("/auth/profile", { method: "PATCH", body: data }),
+    changePassword: (currentPassword, newPassword) => post("/auth/password", { currentPassword, newPassword }),
+    walletChallenge: () => post("/auth/wallet/challenge"),
+    linkWallet: (address, signature) => post("/auth/wallet/link", { address, signature }),
+    resubmitRoleApplication: (organisation) => post("/auth/role-application", organisation),
+
+    // Admin
+    roleApplications: (status) => request(`/admin/role-applications${status ? `?status=${status}` : ""}`),
+    rejectRoleApplication: (id, note) => post(`/admin/role-applications/${id}/reject`, { note }),
+    users: () => request("/admin/users"),
+
+    // Beneficiary applications
+    applyToCampaign: (campaignId, data) => post(`/campaigns/${campaignId}/applications`, data),
+    campaignApplications: (campaignId) => request(`/campaigns/${campaignId}/applications`),
+    myApplications: () => request("/my/applications"),
+    declineApplication: (id, note) => post(`/beneficiary-applications/${id}/decline`, { note }),
+
+    // IPFS (requires login)
     uploadFile: (file) => {
         const form = new FormData();
         form.append("file", file);
-        return request("/ipfs", { method: "POST", body: form });
+        return request("/ipfs", { method: "POST", form });
     },
-
-    /** Stores campaign details as JSON on IPFS. Returns { cid, ... }. */
-    uploadJson: (data) =>
-        request("/ipfs/json", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(data),
-        }),
+    uploadJson: (data) => post("/ipfs/json", data),
 };
 
 /** URL that serves an IPFS file through the backend (verified against its CID). */

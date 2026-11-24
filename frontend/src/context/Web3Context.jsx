@@ -1,12 +1,8 @@
-// Wallet connection, contracts and on-chain role detection.
+// MetaMask connection, contracts and on-chain reads.
 //
-// Two ways to connect:
-//  - MetaMask (the real way): the user's own wallet signs every transaction.
-//  - Demo accounts (local chain 31337 only): uses the local Hardhat node's built-in,
-//    unlocked test accounts, so the demo can switch roles quickly. No private keys are
-//    stored in the app. This mode is refused on any other network.
-//
-// Reads go through the local node (proxied at /rpc) and do not need a wallet.
+// Every transaction is signed by the user's own MetaMask wallet. The website never
+// holds private keys. Reads (balances, roles, campaign data) go through the local
+// node (proxied at /rpc) and do not need a wallet.
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { ethers } from "ethers";
@@ -18,38 +14,21 @@ export const useWeb3 = () => useContext(Web3Context);
 
 const LOCAL_CHAIN_ID = 31337;
 const CONTRACT_NAMES = ["GiveChainAccess", "MockUSDC", "ProjectRegistry", "DonationVault", "MilestoneDisbursement"];
+const STORAGE_KEY = "givechain.metamask";
 
-/** Labels for the Hardhat test accounts, matching docs/DEMO.md and scripts/seed.js. */
-export const DEMO_ACCOUNT_LABELS = [
-    "Admin",
-    "NGO 1 (Demo Relief Foundation)",
-    "NGO 2 (Demo Learning Trust)",
-    "Auditor",
-    "Donor A",
-    "Donor B",
-    "Beneficiary 1",
-    "Beneficiary 2",
-    "Beneficiary 3",
-    "Beneficiary 4",
-];
-
-const NO_ROLES = { admin: false, ngo: false, auditor: false, pauser: false };
-
-// Remembers which wallet was connected, so a page reload reconnects quietly.
-const STORAGE_KEY = "givechain.wallet";
-function saveWallet(value) {
+function remember(on) {
     try {
-        if (value) localStorage.setItem(STORAGE_KEY, JSON.stringify(value));
+        if (on) localStorage.setItem(STORAGE_KEY, "1");
         else localStorage.removeItem(STORAGE_KEY);
     } catch {
-        // storage unavailable (private mode); reconnecting is just a convenience
+        // storage unavailable; reconnecting after reload is just a convenience
     }
 }
-function loadWallet() {
+function remembered() {
     try {
-        return JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+        return localStorage.getItem(STORAGE_KEY) === "1";
     } catch {
-        return null;
+        return false;
     }
 }
 
@@ -58,21 +37,35 @@ export function Web3Provider({ children }) {
     const [configError, setConfigError] = useState(null);
     const [readProvider, setReadProvider] = useState(null);
 
-    const [walletMode, setWalletMode] = useState(null); // "metamask" | "demo" | null
     const [account, setAccount] = useState(null);
     const [signer, setSigner] = useState(null);
     const [walletChainId, setWalletChainId] = useState(null);
-    const [demoAccounts, setDemoAccounts] = useState([]);
 
-    const [roles, setRoles] = useState(NO_ROLES);
     const [paused, setPaused] = useState(false);
     const [balance, setBalance] = useState(0n);
+    const [ethBalance, setEthBalance] = useState(0n);
     const [refreshKey, setRefreshKey] = useState(0);
 
     const refresh = useCallback(() => setRefreshKey((k) => k + 1), []);
-    const hasMetaMask = typeof window !== "undefined" && Boolean(window.ethereum);
 
-    // ---- Load contract config from the backend (retries until it is up) ----
+    // MetaMask is usually injected before the page loads, but some browsers inject it
+    // later and announce it with the "ethereum#initialized" event; also check a few
+    // times after start-up.
+    const [hasMetaMask, setHasMetaMask] = useState(() => typeof window !== "undefined" && Boolean(window.ethereum));
+    useEffect(() => {
+        if (hasMetaMask) return;
+        const check = () => window.ethereum && setHasMetaMask(true);
+        window.addEventListener("ethereum#initialized", check, { once: true });
+        const timer = setInterval(check, 1000);
+        const stop = setTimeout(() => clearInterval(timer), 10000);
+        return () => {
+            window.removeEventListener("ethereum#initialized", check);
+            clearInterval(timer);
+            clearTimeout(stop);
+        };
+    }, [hasMetaMask]);
+
+    // ---- Contract config from the backend (retries until it is up) ----
     useEffect(() => {
         let cancelled = false;
         let timer;
@@ -83,10 +76,9 @@ export function Web3Provider({ children }) {
                 registerErrorAbis(Object.values(cfg.contracts).map((c) => c.abi));
                 setConfig(cfg);
                 setConfigError(null);
-                const rpc = new ethers.JsonRpcProvider(`${window.location.origin}/rpc`, cfg.chainId, {
-                    staticNetwork: true,
-                });
-                setReadProvider(rpc);
+                setReadProvider(
+                    new ethers.JsonRpcProvider(`${window.location.origin}/rpc`, cfg.chainId, { staticNetwork: true })
+                );
             } catch (err) {
                 if (cancelled) return;
                 setConfigError(err.message);
@@ -100,41 +92,31 @@ export function Web3Provider({ children }) {
         };
     }, []);
 
-    const isLocal = config?.chainId === LOCAL_CHAIN_ID;
+    const makeContracts = useCallback(
+        (runner) => {
+            if (!config || !runner) return null;
+            const out = {};
+            for (const name of CONTRACT_NAMES) {
+                const { address, abi } = config.contracts[name];
+                out[name] = new ethers.Contract(address, abi, runner);
+            }
+            return out;
+        },
+        [config]
+    );
+    const contracts = useMemo(() => makeContracts(signer || readProvider), [makeContracts, signer, readProvider]);
+    const readContracts = useMemo(() => makeContracts(readProvider), [makeContracts, readProvider]);
 
-    // ---- Demo accounts (local chain only) ----
-    useEffect(() => {
-        if (!readProvider || !isLocal) return;
-        readProvider
-            .send("eth_accounts", [])
-            .then((list) => setDemoAccounts(list.slice(0, DEMO_ACCOUNT_LABELS.length).map((a) => ethers.getAddress(a))))
-            .catch(() => setDemoAccounts([]));
-    }, [readProvider, isLocal]);
+    // ---- MetaMask ----
+    const adoptAccount = useCallback(async (address) => {
+        const browserProvider = new ethers.BrowserProvider(window.ethereum);
+        const network = await browserProvider.getNetwork();
+        setWalletChainId(Number(network.chainId));
+        setSigner(await browserProvider.getSigner(address));
+        setAccount(ethers.getAddress(address));
+    }, []);
 
-    // ---- Contracts ----
-    const contracts = useMemo(() => {
-        if (!config || !readProvider) return null;
-        const runner = signer || readProvider;
-        const out = {};
-        for (const name of CONTRACT_NAMES) {
-            const { address, abi } = config.contracts[name];
-            out[name] = new ethers.Contract(address, abi, runner);
-        }
-        return out;
-    }, [config, readProvider, signer]);
-
-    const readContracts = useMemo(() => {
-        if (!config || !readProvider) return null;
-        const out = {};
-        for (const name of CONTRACT_NAMES) {
-            const { address, abi } = config.contracts[name];
-            out[name] = new ethers.Contract(address, abi, readProvider);
-        }
-        return out;
-    }, [config, readProvider]);
-
-    // ---- Connect / disconnect ----
-    const switchMetaMaskNetwork = useCallback(async () => {
+    const switchNetwork = useCallback(async () => {
         if (!window.ethereum || !config) return;
         const chainIdHex = ethers.toQuantity(config.chainId);
         try {
@@ -158,79 +140,45 @@ export function Web3Provider({ children }) {
         }
     }, [config]);
 
-    const adoptMetaMaskAccount = useCallback(async (address) => {
-        const browserProvider = new ethers.BrowserProvider(window.ethereum);
-        const network = await browserProvider.getNetwork();
-        setWalletChainId(Number(network.chainId));
-        setSigner(await browserProvider.getSigner(address));
-        setAccount(ethers.getAddress(address));
-        setWalletMode("metamask");
-    }, []);
-
-    const connectMetaMask = useCallback(async () => {
+    const connect = useCallback(async () => {
         if (!window.ethereum) throw new Error("MetaMask is not installed in this browser.");
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
-        if (!accounts.length) return;
+        if (!accounts.length) return null;
         try {
-            await switchMetaMaskNetwork();
+            await switchNetwork();
         } catch {
-            // The wrong-network banner lets the user retry.
+            // the wrong-network banner lets the user retry
         }
-        await adoptMetaMaskAccount(accounts[0]);
-        saveWallet({ mode: "metamask" });
-    }, [switchMetaMaskNetwork, adoptMetaMaskAccount]);
-
-    const connectDemo = useCallback(
-        async (address) => {
-            if (!isLocal || !readProvider) throw new Error("Demo accounts only work on the local chain.");
-            setSigner(await readProvider.getSigner(address));
-            setAccount(ethers.getAddress(address));
-            setWalletChainId(LOCAL_CHAIN_ID);
-            setWalletMode("demo");
-            saveWallet({ mode: "demo", address });
-        },
-        [isLocal, readProvider]
-    );
+        await adoptAccount(accounts[0]);
+        remember(true);
+        return ethers.getAddress(accounts[0]);
+    }, [switchNetwork, adoptAccount]);
 
     const disconnect = useCallback(() => {
-        setWalletMode(null);
         setAccount(null);
         setSigner(null);
         setWalletChainId(null);
-        saveWallet(null);
+        remember(false);
     }, []);
 
-    // Reconnect the remembered wallet after a reload, without any wallet pop-up.
-    const [restored, setRestored] = useState(false);
+    // Reconnect after a reload, without a pop-up (eth_accounts never prompts).
     useEffect(() => {
-        if (restored || !config || !readProvider) return;
-        const saved = loadWallet();
-        if (!saved) return setRestored(true);
-        if (saved.mode === "demo") {
-            if (!isLocal || !demoAccounts.length) return; // wait until demo accounts are loaded
-            if (demoAccounts.includes(saved.address)) connectDemo(saved.address).catch(() => {});
-            setRestored(true);
-        } else if (saved.mode === "metamask" && window.ethereum) {
-            setRestored(true);
-            window.ethereum
-                .request({ method: "eth_accounts" }) // only returns accounts already allowed; never prompts
-                .then((accounts) => accounts.length && adoptMetaMaskAccount(accounts[0]))
-                .catch(() => {});
-        } else {
-            setRestored(true);
-        }
-    }, [restored, config, readProvider, isLocal, demoAccounts, connectDemo, adoptMetaMaskAccount]);
+        if (!hasMetaMask || !remembered()) return;
+        window.ethereum
+            .request({ method: "eth_accounts" })
+            .then((accounts) => accounts.length && adoptAccount(accounts[0]))
+            .catch(() => {});
+    }, [hasMetaMask, adoptAccount]);
 
-    // MetaMask account / network changes.
+    // Follow account and network changes made in MetaMask.
     useEffect(() => {
-        if (!window.ethereum || walletMode !== "metamask") return;
-        const onAccounts = (accounts) => {
-            if (!accounts.length) disconnect();
-            else adoptMetaMaskAccount(accounts[0]);
-        };
+        if (!hasMetaMask) return;
+        const onAccounts = (accounts) => (accounts.length ? adoptAccount(accounts[0]) : disconnect());
         const onChain = () => {
-            const current = window.ethereum.selectedAddress;
-            if (current) adoptMetaMaskAccount(current);
+            window.ethereum
+                .request({ method: "eth_accounts" })
+                .then((accounts) => accounts.length && adoptAccount(accounts[0]))
+                .catch(() => {});
         };
         window.ethereum.on?.("accountsChanged", onAccounts);
         window.ethereum.on?.("chainChanged", onChain);
@@ -238,39 +186,34 @@ export function Web3Provider({ children }) {
             window.ethereum.removeListener?.("accountsChanged", onAccounts);
             window.ethereum.removeListener?.("chainChanged", onChain);
         };
-    }, [walletMode, disconnect, adoptMetaMaskAccount]);
+    }, [hasMetaMask, adoptAccount, disconnect]);
 
-    // ---- On-chain roles, pause state and token balance ----
+    // ---- Pause state and balances of the connected wallet ----
     useEffect(() => {
-        if (!readContracts) return;
+        if (!readContracts || !readProvider) return;
         let cancelled = false;
         (async () => {
-            const access = readContracts.GiveChainAccess;
-            const isPaused = await access.paused();
-            if (!cancelled) setPaused(isPaused);
+            const isPaused = await readContracts.GiveChainAccess.paused();
+            if (cancelled) return;
+            setPaused(isPaused);
             if (!account) {
-                if (!cancelled) {
-                    setRoles(NO_ROLES);
-                    setBalance(0n);
-                }
+                setBalance(0n);
+                setEthBalance(0n);
                 return;
             }
-            const [admin, ngo, auditor, pauser, bal] = await Promise.all([
-                access.hasRole(ethers.ZeroHash, account),
-                access.hasRole(ethers.id("NGO_ROLE"), account),
-                access.hasRole(ethers.id("AUDITOR_ROLE"), account),
-                access.hasRole(ethers.id("PAUSER_ROLE"), account),
+            const [bal, eth] = await Promise.all([
                 readContracts.MockUSDC.balanceOf(account),
+                readProvider.getBalance(account),
             ]);
             if (!cancelled) {
-                setRoles({ admin, ngo, auditor, pauser });
                 setBalance(bal);
+                setEthBalance(eth);
             }
         })().catch(() => {});
         return () => {
             cancelled = true;
         };
-    }, [readContracts, account, refreshKey]);
+    }, [readContracts, readProvider, account, refreshKey]);
 
     const wrongNetwork = Boolean(account && config && walletChainId && walletChainId !== config.chainId);
 
@@ -280,21 +223,17 @@ export function Web3Provider({ children }) {
         readProvider,
         contracts,
         readContracts,
-        walletMode,
         account,
         signer,
         hasMetaMask,
-        isLocal,
-        demoAccounts,
-        connectMetaMask,
-        connectDemo,
+        connect,
         disconnect,
-        switchMetaMaskNetwork,
+        switchNetwork,
         wrongNetwork,
         walletChainId,
-        roles,
         paused,
         balance,
+        ethBalance,
         refreshKey,
         refresh,
     };

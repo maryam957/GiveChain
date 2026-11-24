@@ -4,7 +4,7 @@ import { api } from "../lib/api";
 import { useData } from "../lib/useData";
 import { formatDate } from "../lib/format";
 import { useWeb3 } from "../context/Web3Context";
-import { Address, Amount, Empty, ErrorNote, Evidence, Loading, Section, Stat, StatusBadge, TxHash } from "../components/ui";
+import { Address, Amount, Empty, ErrorNote, Evidence, Loading, Page, Section, Stat, StatusBadge, TxHash } from "../components/ui";
 
 const EVENT_TEXT = {
     CampaignCreated: "Campaign created",
@@ -41,13 +41,13 @@ export default function Transparency() {
         return readContracts.MockUSDC.balanceOf(config.contracts.DonationVault.address);
     }, [readContracts, config]);
 
-    if (stats.error) return <ErrorNote error={stats.error} />;
-    if (!stats.data) return <Loading />;
+    if (stats.error) return <Page><ErrorNote error={stats.error} /></Page>;
+    if (!stats.data) return <Page><Loading /></Page>;
     const s = stats.data;
     const matches = onChain.data !== null && onChain.data !== undefined && BigInt(s.totalHeld) === onChain.data;
 
     return (
-        <>
+        <Page>
             <h1>Transparency</h1>
             <p className="lead">
                 Every number here is rebuilt from public blockchain events. You do not have to trust this website: each line
@@ -155,6 +155,6 @@ export default function Transparency() {
                     </button>
                 )}
             </Section>
-        </>
+        </Page>
     );
 }

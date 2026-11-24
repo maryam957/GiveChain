@@ -139,6 +139,37 @@ Contract-to-contract permission: only the `MilestoneDisbursement` address may ca
 
 **Separation of duties:** `GiveChainAccess` refuses to give one wallet both the NGO and the Auditor role. MilestoneDisbursement additionally refuses an approval from the campaign's own NGO wallet, in case roles change later.
 
+### Accounts and onboarding (added in Phase 9)
+
+People use GiveChain through an **account** (email + password) that is linked to **one wallet**. The account decides which portal a person sees; the **blockchain decides what they may do**. In the website, the Auditor role is called **Verifier**.
+
+```mermaid
+sequenceDiagram
+    participant P as Person
+    participant W as Website
+    participant B as Backend (accounts)
+    participant C as GiveChainAccess
+    participant A as Admin
+    P->>W: Sign up as NGO (organisation details)
+    W->>B: create account + pending application
+    P->>W: Link MetaMask
+    W->>B: signed one-time message
+    B->>B: verifyMessage → wallet linked
+    A->>W: Applications → Approve
+    W->>C: grantRole(NGO_ROLE, wallet) signed by the admin in MetaMask
+    C-->>B: RoleGranted event (indexed)
+    B->>W: application = approved, because the role is on-chain
+    W->>P: NGO tools unlocked
+```
+
+| Flow | Off-chain step (backend) | On-chain step (contract) |
+|---|---|---|
+| NGO / verifier joins | Application with organisation details | Admin's `grantRole`, which is the only thing that grants power |
+| Beneficiary joins a campaign | Application with name, ID number and reason, visible only to that campaign's NGO and verifiers; or the NGO adds the person directly | NGO's `registerBeneficiary(wallet, commitment)`, then the verifier's `approveBeneficiary` |
+| Donating, payouts, refunds | none | Every step signed by the person's own wallet |
+
+The commitment is `keccak256(ngoKey, normalisedId)`. `ngoKey` is derived in the browser from the NGO wallet's signature of a fixed message, so it is never stored, and the same person always produces the same commitment, which lets the contract block duplicates.
+
 ## 4. State transitions
 
 ### Campaign
@@ -226,6 +257,9 @@ Example: a campaign raised 1,000 and paid out 400 before it was cancelled. A don
 | Evidence files (receipts, photos) | IPFS | The CID proves the file is unchanged since submission. It does **not** prove the event really happened; that is what the auditor's approval is for. |
 | Donations, payouts, refunds | On-chain (events + balances) | The core transparency promise |
 | Searchable history, totals for dashboards | Backend in-memory index | Built only from on-chain events and rebuilt on every backend start, so it can never drift from the chain for long |
+| Accounts: email, password hash, name, linked wallet | Backend account database | Needed to log in; passwords stored only as scrypt hashes; never decides permissions |
+| NGO / verifier applications | Backend account database | Reviewed by the admin; approval itself is the on-chain role grant |
+| Beneficiary applications (name, ID number, phone, reason) | Backend account database, visible only to the campaign's NGO and verifiers | Personal data must never go on-chain; only the salted commitment does |
 
 ## 7. Trust boundaries
 
@@ -282,7 +316,7 @@ flowchart TB
 
 - The auditor's approval is a human judgement. Blockchain proves what was approved and paid, not that aid was really delivered.
 - IPFS files stay available only while someone pins them. In local mode they live in the backend's store (`backend/storage/`), and demo files are re-imported from `seed-data/` on every start.
-- The backend's upload endpoints have no login or rate limit (fine locally, not for a public deployment).
+- Uploads require a login but are not rate-limited per user. Accounts have no email verification or password reset by email, and personal data in the account database is not encrypted at rest (fine locally, not for a public deployment).
 - Contracts are not upgradeable. A bug fix means redeploying.
 - A single admin and auditor are used in the demo. Production would use multisig wallets and several auditors.
 - Pro-rata refunds can leave a tiny remainder in the vault from integer division. A donor whose share rounds down to zero cannot claim (tested).

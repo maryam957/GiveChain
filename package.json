@@ -16,7 +16,8 @@
     "backend:test": "npm --prefix backend test",
     "frontend": "npm --prefix frontend run dev",
     "frontend:install": "npm --prefix frontend install",
-    "frontend:build": "npm --prefix frontend run build"
+    "frontend:build": "npm --prefix frontend run build",
+    "inspect": "node scripts/inspect.js"
   },
   "keywords": [],
   "author": "",

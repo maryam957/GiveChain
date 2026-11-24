@@ -85,12 +85,29 @@ The contracts in scope are `GiveChainAccess`, `AccessControlBase`, `ProjectRegis
 
 The per-contract test files also cover boundary cases, for example: exactly the faucet limit vs one unit more; reserving exactly the available balance vs one unit more; refunds that round down to zero; and an accounting invariant test checking that the vault's token balance equals the sum of every campaign's held balance after a long mixed sequence of actions.
 
+### Off-chain account security (added in Phase 9)
+
+Accounts give people a login, but **never grant power over money**. Roles are only ever read from the contracts.
+
+| Threat | Mitigation | Evidence (`backend/test/accounts.test.js`) |
+|---|---|---|
+| Stolen password database | scrypt hashes with a random salt; passwords never stored or returned | "stores only a scrypt hash of the password" |
+| Password guessing | 10 failures per email or IP per 15 minutes → HTTP 429; same message for an unknown email and a wrong password | "blocks repeated wrong passwords", "logs in, rejects a wrong password with a generic message" |
+| Session theft through JavaScript or other sites | Random session token in an `HttpOnly`, `SameSite=Lax` cookie; only its hash stored; a password change ends other sessions | "creates an account, logs in with an HttpOnly cookie", "changing the password … ends other sessions" |
+| Linking someone else's wallet | One-time message signed in MetaMask, checked with `verifyMessage`; one wallet per account | "links a wallet only with a valid signature", "one wallet cannot belong to two accounts" |
+| Self-promotion to NGO or admin through the database | Admin cannot be chosen at sign-up; NGO/verifier approval and admin pages require the **on-chain** role | "only the admin with the on-chain admin role…", "becomes approved only when the role is on-chain" |
+| Leaking beneficiary personal data | Applications visible only to the campaign's NGO and to verifiers; nothing personal on-chain; public profiles exclude donors and beneficiaries | "keeps applicant details private", "public profiles show organisation names but never donors or beneficiaries" |
+| Anonymous file spam | IPFS uploads require a login | "IPFS uploads require a login" |
+| Same person registered twice under a new wallet | The NGO's identity key is derived from a deterministic wallet signature, and IDs are normalised, so the same ID always gives the same commitment and the contract rejects it | Verified in the browser: re-registering "demo id 0005" for another wallet failed with `IdentityAlreadyUsed` |
+| Acting with the wrong wallet | The website blocks actions when MetaMask is not on the account's linked wallet | Verified in the browser |
+
 ## 6. How to reproduce
 
 ```bash
-npm install
-npx hardhat test test/Security.test.js   # security scenarios only
-npm test                                  # everything (220 tests)
+npm install && npm run backend:install
+npx hardhat test test/Security.test.js   # contract security scenarios only
+npm test                                  # contracts, security, indexer (238 tests)
+npm run backend:test                      # IPFS and account security (34 tests)
 ```
 
 ## 7. Known limitations
@@ -104,6 +121,7 @@ npm test                                  # everything (220 tests)
 - **Token assumptions.** Only standard ERC-20 tokens are supported; fee-on-transfer or rebasing tokens would break the accounting.
 - **No upgrades.** Contracts cannot be upgraded; fixing a bug means redeploying.
 - **Static analysis** (for example Slither) has not been run yet. All evidence above comes from automated tests.
+- **Accounts (prototype level).** No email verification, no password reset by email, no two-factor login, and beneficiary personal data is not encrypted at rest in `backend/data/accounts.json`. A production deployment needs all of these and a proper database.
 
 ## 8. Reused code (attribution)
 

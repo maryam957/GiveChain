@@ -116,6 +116,8 @@ Progress: **Phase 7 done.** React + Vite + ethers.js site with MetaMask, on-chai
 
 **Done when:** every row of the course rubric points to a file, a test or a demo step.
 
+Progress: **Phase 8 drafted.** `docs/REPORT.md` (technical report draft), `docs/RUBRIC-CHECKLIST.md` (every rubric row → evidence), `docs/CONTRIBUTIONS.md` (matrix draft from git history). Fresh clone from GitHub installs, passes all tests, builds the frontend and runs the gas benchmark. **Team actions left:** complete the contribution matrix and the AI-use statement (REPORT §12), test MetaMask, rehearse the demo, merge into `main`.
+
 ## How the old problems map to phases
 
 | Problem | Fixed in |
@@ -129,3 +131,15 @@ Progress: **Phase 7 done.** React + Vite + ethers.js site with MetaMask, on-chai
 | 7. Three pause buttons | 2a |
 | 8. Leftover files, stale docs | 0, 3, 8 |
 | No frontend / backend / IPFS | 6, 7 |
+
+## Phase 9: Accounts, role portals and UI redesign
+
+Added after the hand-in drafts, at the team's request.
+
+- **Accounts:** email + password sign-up and login for Donor, Beneficiary, NGO and Verifier (the website's name for the auditor role); the admin is created on deployment. Each account links one MetaMask wallet by signing a message.
+- **Onboarding:** NGOs and verifiers apply with organisation details; the admin approves, which grants the role on-chain. Beneficiaries apply to a campaign; the NGO selects them (or adds people directly); a verifier approves.
+- **Portals:** a separate, sidebar-based portal per account type with a setup checklist and a to-do list; a new public site (home, campaigns, how it works, transparency).
+- **Removed:** the one-click demo account switcher. Every action now needs the person's own login and wallet.
+- **Fixed:** duplicate-person protection in the website. The NGO's identity key now comes from a deterministic wallet signature and IDs are normalised.
+- **Added:** `npm run inspect` reads any wallet's roles, balances and payments straight from the contracts.
+- Tests: 34 backend tests (18 new account tests) + 238 contract/indexer tests. Browser-tested: admin approval, NGO selecting an applicant, the duplicate-ID failure, verifier approval, new user sign-up → wallet link → application, the wrong-wallet guard.

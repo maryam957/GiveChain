@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { ipfsUrl } from "../lib/api";
-import { DEMO_ACCOUNT_LABELS, useWeb3 } from "../context/Web3Context";
+import { useWeb3 } from "../context/Web3Context";
+import { useAuth } from "../context/AuthContext";
+import { useProfiles } from "../context/ProfilesContext";
 import {
     explorerTxUrl,
     formatAmount,
@@ -39,16 +41,21 @@ export function Amount({ value, symbol = true }) {
     );
 }
 
-/** Shows a short address, with the demo role name when it is a known demo account. */
+/** Short address, with the organisation's public name when it has one. */
 export function Address({ value }) {
-    const { demoAccounts, account } = useWeb3();
-    const index = demoAccounts.findIndex((a) => a.toLowerCase() === value?.toLowerCase());
-    const label = index >= 0 ? DEMO_ACCOUNT_LABELS[index] : null;
-    const isMe = account && value && account.toLowerCase() === value.toLowerCase();
+    const { byWallet } = useProfiles();
+    const { user } = useAuth();
+    const profile = value ? byWallet.get(value.toLowerCase()) : null;
+    const isMe = user?.wallet && value && user.wallet.toLowerCase() === value.toLowerCase();
     return (
         <span className="address" title={value}>
+            {profile && (
+                <span className="address-label">
+                    {profile.organisation || profile.name}
+                    {profile.verified && <span className="tick" title="Role verified on-chain"> ✓</span>}
+                </span>
+            )}
             <code>{shortAddress(value)}</code>
-            {label && <span className="address-label">{label}</span>}
             {isMe && <span className="address-me">you</span>}
         </span>
     );
@@ -119,6 +126,24 @@ export function Loading() {
 export function ErrorNote({ error }) {
     if (!error) return null;
     return <p className="error-note">{error.message || String(error)}</p>;
+}
+
+/** Standard page container for public pages. */
+export function Page({ children }) {
+    return <main className="container main">{children}</main>;
+}
+
+/** Page title with an optional subtitle and action buttons. */
+export function PageHead({ title, subtitle, actions }) {
+    return (
+        <div className="page-head">
+            <div>
+                <h1>{title}</h1>
+                {subtitle && <p className="muted">{subtitle}</p>}
+            </div>
+            {actions && <div className="row">{actions}</div>}
+        </div>
+    );
 }
 
 export function Section({ title, actions, children }) {
