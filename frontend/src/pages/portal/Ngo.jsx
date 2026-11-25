@@ -532,12 +532,24 @@ export function NgoCampaign() {
     const { user } = useAuth();
     const navigate = useNavigate();
     const [tab, setTab] = useState("applicants");
-    const { data, error } = useData(async () => {
-        const [campaign, applications] = await Promise.all([api.campaign(id), api.campaignApplications(id).catch(() => [])]);
-        return { campaign, applications };
-    }, [id]);
+    // Refreshes every 8 seconds so new applications appear without reloading.
+    // If applications cannot be loaded, say so instead of showing an empty list.
+    const { data, error } = useData(
+        async () => {
+            const [campaign, applications] = await Promise.all([
+                api.campaign(id),
+                api.campaignApplications(id).then(
+                    (list) => ({ list, error: null }),
+                    (err) => ({ list: [], error: err })
+                ),
+            ]);
+            return { campaign, applications: applications.list, applicationsError: applications.error };
+        },
+        [id],
+        { intervalMs: 8000 }
+    );
 
-    if (error) return <ErrorNote error={error} />;
+    if (error && !data) return <ErrorNote error={error} />;
     if (!data) return <Loading />;
     const c = data.campaign;
     if (!sameAddress(c.ngo, user.wallet)) {
@@ -575,6 +587,12 @@ export function NgoCampaign() {
                     </button>
                 ))}
             </div>
+            {data.applicationsError && (
+                <p className="error-note">
+                    Could not load the people who applied: {data.applicationsError.message} The page tries again every few
+                    seconds.
+                </p>
+            )}
             {tab === "applicants" && <Applicants campaign={c} applications={data.applications} />}
             {tab === "people" && <People campaign={c} applications={data.applications} />}
             {tab === "payments" && <Payments campaign={c} applications={data.applications} />}

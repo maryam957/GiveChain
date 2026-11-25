@@ -24,17 +24,21 @@ export function VerifierReview() {
     const { runTx } = useTx();
     const [tab, setTab] = useState("people");
 
-    const { data, error } = useData(async () => {
-        const list = await api.campaigns("?status=Active");
-        return Promise.all(
-            list.map(async (c) => {
-                const [detail, applications] = await Promise.all([api.campaign(c.id), api.campaignApplications(c.id).catch(() => [])]);
-                return { ...detail, applications };
-            })
-        );
-    });
+    const { data, error } = useData(
+        async () => {
+            const list = await api.campaigns("?status=Active");
+            return Promise.all(
+                list.map(async (c) => {
+                    const [detail, applications] = await Promise.all([api.campaign(c.id), api.campaignApplications(c.id).catch(() => [])]);
+                    return { ...detail, applications };
+                })
+            );
+        },
+        [],
+        { intervalMs: 8000 } // new requests from NGOs appear without reloading
+    );
 
-    if (error) return <ErrorNote error={error} />;
+    if (error && !data) return <ErrorNote error={error} />;
     if (!data) return <Loading />;
 
     const people = [];
