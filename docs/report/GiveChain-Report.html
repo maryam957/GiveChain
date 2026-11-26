@@ -1,0 +1,1030 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GiveChain Technical Report</title>
+<style>
+  @page { size: A4; margin: 18mm 17mm 20mm 17mm;
+    @bottom-center { content: "GiveChain technical report  ·  page " counter(page); font-family: "Segoe UI", sans-serif; font-size: 8pt; color: #6b7a76; } }
+  @page :first { @bottom-center { content: none; } }
+  :root { --g: #0f6b54; --g2: #e3f1ec; --ink: #17211e; --mute: #5d6b67; --line: #cfd9d5; --oz: #eef0f2; --warn: #9a5b00; --bad: #a3271f; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: Calibri, "Segoe UI", sans-serif; font-size: 10.6pt; line-height: 1.42; color: var(--ink); background: #fff; margin: 0; }
+  h1, h2, h3, h4 { font-family: "Segoe UI", sans-serif; color: var(--ink); line-height: 1.2; break-after: avoid; }
+  h2 { font-size: 16pt; color: var(--g); margin: 0 0 8pt; padding-bottom: 4pt; border-bottom: 1.5pt solid var(--g); break-before: page; }
+  h2.nobreak { break-before: auto; margin-top: 18pt; }
+  h3 { font-size: 12pt; margin: 14pt 0 5pt; }
+  h4 { font-size: 10.5pt; margin: 10pt 0 3pt; }
+  p { margin: 0 0 6pt; text-align: justify; hyphens: auto; }
+  ul, ol { margin: 0 0 6pt; padding-left: 16pt; } li { margin-bottom: 2pt; }
+  code, .mono { font-family: Consolas, "Cascadia Mono", monospace; font-size: 9pt; }
+  code { background: #f2f5f4; padding: 0 2pt; border-radius: 2pt; }
+  table { border-collapse: collapse; width: 100%; margin: 4pt 0 9pt; font-size: 9.2pt; line-height: 1.3; }
+  th, td { border: 0.6pt solid var(--line); padding: 3pt 5pt; vertical-align: top; text-align: left; }
+  th { background: var(--g2); font-family: "Segoe UI", sans-serif; font-weight: 600; font-size: 8.6pt; }
+  tr { break-inside: avoid; }
+  td.n, th.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  tr.total td { font-weight: 700; background: #f4f8f6; }
+  .good { color: var(--g); font-weight: 700; } .bad { color: var(--bad); font-weight: 700; }
+  figure { margin: 8pt 0 12pt; break-inside: avoid; text-align: center; }
+  figure svg { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 9pt; color: var(--mute); margin-top: 4pt; text-align: left; }
+  figcaption b { color: var(--ink); }
+  .shot { border: 0.6pt solid var(--line); border-radius: 3pt; overflow: hidden; }
+  .shot img { width: 100%; display: block; }
+  .crop { overflow: hidden; } .crop img { width: 100%; display: block; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .callout { background: var(--g2); border-left: 3pt solid var(--g); padding: 6pt 9pt; margin: 6pt 0 10pt; break-inside: avoid; }
+  .callout p:last-child { margin-bottom: 0; }
+  .note { background: #fff7e8; border-left: 3pt solid #d99a2b; padding: 6pt 9pt; margin: 6pt 0 10pt; break-inside: avoid; }
+  .term { background: #10201b; color: #d7efe6; font-family: Consolas, monospace; font-size: 8.2pt; line-height: 1.35; padding: 8pt 10pt; border-radius: 3pt; text-align: left; white-space: pre; overflow: hidden; break-inside: avoid; }
+  .term .c { color: #7fd1b4; } .term .y { color: #f2d48a; } .term .m { color: #93a7a0; }
+  /* SVG styling */
+  svg text { font-family: "Segoe UI", sans-serif; font-size: 11px; fill: var(--ink); }
+  svg .t-s { font-size: 9.5px; fill: var(--mute); }
+  svg .t-b { font-weight: 600; }
+  svg .t-h { font-weight: 700; font-size: 11.5px; fill: var(--g); }
+  svg .box { fill: #fff; stroke: var(--g); stroke-width: 1.3; }
+  svg .boxg { fill: var(--g2); stroke: var(--g); stroke-width: 1.3; }
+  svg .boxoz { fill: var(--oz); stroke: #8a959c; stroke-width: 1.1; }
+  svg .boxw { fill: #fff7e8; stroke: #d99a2b; stroke-width: 1.2; }
+  svg .boxr { fill: #fbeceb; stroke: var(--bad); stroke-width: 1.2; }
+  svg .grp { fill: none; stroke: #9fb3ac; stroke-width: 1; stroke-dasharray: 5 3; }
+  svg .zone { stroke-width: 1.2; }
+  svg .ln { fill: none; stroke: #33433e; stroke-width: 1.2; }
+  svg .dash { fill: none; stroke: #33433e; stroke-width: 1.1; stroke-dasharray: 4 3; }
+  svg .life { stroke: #b7c4bf; stroke-width: 1; stroke-dasharray: 3 3; }
+  /* Cover */
+  .cover { height: 255mm; display: flex; flex-direction: column; }
+  .cover .band { background: var(--g); color: #fff; padding: 26mm 14mm 16mm; margin: -2mm -2mm 0; border-radius: 4pt; }
+  .cover .band h1 { color: #fff; font-size: 34pt; margin: 0 0 4pt; letter-spacing: -0.5pt; }
+  .cover .band .sub { font-size: 14pt; opacity: .92; font-family: "Segoe UI", sans-serif; }
+  .cover .meta { margin-top: 16mm; font-size: 11pt; }
+  .cover .meta table { width: auto; font-size: 10.5pt; } .cover .meta td { border: none; padding: 2pt 14pt 2pt 0; }
+  .cover .meta td:first-child { color: var(--mute); }
+  .cover .abstract { margin-top: auto; border-top: 1pt solid var(--line); padding-top: 8pt; }
+  .toc { columns: 2; column-gap: 18pt; font-size: 10pt; }
+  .toc div { break-inside: avoid; margin-bottom: 2pt; } .toc .s { padding-left: 12pt; color: var(--mute); font-size: 9.4pt; }
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6pt; margin: 8pt 0 10pt; }
+  .kpi { border: 0.8pt solid var(--line); border-radius: 3pt; padding: 5pt 7pt; }
+  .kpi b { display: block; font-family: "Segoe UI", sans-serif; font-size: 15pt; color: var(--g); }
+  .kpi span { font-size: 8.6pt; color: var(--mute); }
+</style>
+</head>
+<body>
+
+<!-- ============================ COVER ============================ -->
+<section class="cover">
+  <div class="band">
+    <div class="sub">Blockchain Empowerment Project · Fall 2026</div>
+    <h1>GiveChain</h1>
+    <div class="sub">A transparent NGO donation platform where donated money is held by smart contracts and released only after independent verification</div>
+  </div>
+  <div class="meta">
+    <h3 style="margin-top:0">Technical report</h3>
+    <table>
+      <tr><td>Team</td><td>Maryam (<span class="mono">maryam957</span>) · Waleed (<span class="mono">waleedahmadzai</span>)</td></tr>
+      <tr><td>Repository</td><td class="mono">github.com/maryam957/GiveChain</td></tr>
+      <tr><td>Version described</td><td>branch <span class="mono">phase-9-accounts</span>, commit <span class="mono">03c469b</span></td></tr>
+      <tr><td>Stack</td><td>Solidity 0.8.28 · Hardhat 2.29 · OpenZeppelin 5 · ethers 6 · Node.js / Express · React 18 / Vite · MetaMask · IPFS (CIDv1)</td></tr>
+      <tr><td>Networks</td><td>Hardhat Network (chain 31337) and Ganache (chain 1337); Sepolia configured, not deployed</td></tr>
+      <tr><td>Date</td><td>26 November 2026</td></tr>
+    </table>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><b>5 + 1</b><span>contracts + inherited abstract base, 3 interfaces</span></div>
+    <div class="kpi"><b>272</b><span>automated tests, all passing</span></div>
+    <div class="kpi"><b>−26.1%</b><span>gas for one full campaign life cycle</span></div>
+    <div class="kpi"><b>13 + 7</b><span>tested attack scenarios (S1–S8, M1–M5) + off-chain threats</span></div>
+  </div>
+  <div class="abstract">
+    <h4 style="margin-top:0">Abstract</h4>
+    <p>Donors to NGOs usually hand over control of their money and cannot verify how it is spent. GiveChain removes that blind trust: donations are held by a vault contract, the NGO can never take money for itself, and every payment needs an independent verifier's approval before the vault pays the beneficiary's own wallet directly. Every donation, approval, payment, receipt confirmation and refund is a public on-chain transaction. Large and personal data stay off-chain: evidence files live in a content-addressed IPFS store whose fingerprint is fixed on-chain, and beneficiaries appear on-chain only as a wallet and a salted identity hash. This report explains the problem, the architecture and the main design decisions, and presents the gas measurements (a 26.1% saving across a campaign, measured against a documented baseline), the threat model with its tested mitigations, the test results, the known limitations and the team's division of work.</p>
+  </div>
+</section>
+
+<!-- ============================ TOC ============================ -->
+<h2 class="nobreak" style="break-before:page;margin-top:0">Contents</h2>
+<div class="toc">
+  <div>1. Problem and motivation</div>
+  <div>2. Why blockchain, and what stays off-chain</div>
+  <div>3. Use case: roles and workflows</div>
+  <div>4. Architecture</div>
+  <div class="s">4.1 Components · 4.2 Contracts and inheritance · 4.3 Contract interaction · 4.4 State machines · 4.5 Money accounting · 4.6 On-chain / off-chain data map · 4.7 Information flow and integrity · 4.8 Trust boundaries</div>
+  <div>5. Key design decisions</div>
+  <div>6. Implementation</div>
+  <div class="s">6.1 Smart contracts · 6.2 Backend · 6.3 Frontend · 6.4 Evolution from the first prototype</div>
+  <div>7. Gas measurement and optimization</div>
+  <div>8. Smart-contract security</div>
+  <div>9. Testing and results</div>
+  <div>10. Deployment and reproducibility</div>
+  <div>11. Limitations and future work</div>
+  <div>12. Reused code, tools and AI assistance</div>
+  <div>13. Work distribution</div>
+  <div>Appendix A. Rubric evidence map</div>
+  <div>Appendix B. Running the demonstration</div>
+</div>
+
+<h3>List of figures</h3>
+<table>
+  <tr><th>#</th><th>Figure</th><th>#</th><th>Figure</th></tr>
+  <tr><td>1</td><td>Workflow overview</td><td>9</td><td>Transparency page with independent balance check</td></tr>
+  <tr><td>2</td><td>System components</td><td>10</td><td>NGO portal: applicant selection</td></tr>
+  <tr><td>3</td><td>Contract inheritance and interaction</td><td>11</td><td>Verifier portal: review queue</td></tr>
+  <tr><td>4</td><td>Payment sequence across contracts</td><td>12</td><td>Gas: baseline vs optimized</td></tr>
+  <tr><td>5</td><td>State machines</td><td>13</td><td>Reentrancy attack against the control vault and GiveChain</td></tr>
+  <tr><td>6</td><td>Evidence flow and integrity checks</td><td>14</td><td>Chain log of one payment (Hardhat node)</td></tr>
+  <tr><td>7</td><td>Trust boundaries</td><td>15</td><td>Reading a wallet straight from the contracts</td></tr>
+  <tr><td>8</td><td>Public campaign page</td><td></td><td></td></tr>
+</table>
+
+<h3>Reading guide</h3>
+<p>Sections 1–3 justify the use case. Section 4 is the architecture package (component diagram, inheritance and interaction diagrams, trust boundaries and the on-chain/off-chain data map). Section 5 records the design decisions with their alternatives. Sections 7 and 8 contain the gas and security evidence, section 9 the test results, section 11 the limitations and section 13 the contribution matrix. Appendix A maps every rubric row to its evidence. The full supporting documents are in the repository under <code>docs/</code>: <code>ARCHITECTURE.md</code>, <code>GiveChain-Gas-Sheet.md</code>, <code>GiveChain-Security-Package.md</code>, <code>DEMO.md</code> and <code>CONTRIBUTIONS.md</code>.</p>
+
+<!-- ============================ 1 ============================ -->
+<h2>1. Problem and motivation</h2>
+<p>When people donate to an NGO, they hand over control of the money and must trust the NGO to spend it as promised. Donors rarely see independent, verifiable records of where each amount went. Misuse is hard to detect, and honest NGOs find it hard to prove that they are honest. Reports published by the NGO itself are not independent evidence, because the same party that spends the money also writes the record.</p>
+<p>The problem therefore has three parts:</p>
+<ol>
+  <li><b>Custody:</b> whoever holds the money can misuse it.</li>
+  <li><b>Verification:</b> nobody independent checks a payment before it happens.</li>
+  <li><b>Record-keeping:</b> the record of what happened is private and can be edited.</li>
+</ol>
+<div class="callout"><p><b>GiveChain's principle:</b> do not trust the NGO with the money; let a smart contract hold it. Donations sit in a vault contract. Money can leave the vault in only two ways: as a direct payment to a registered, verifier-approved beneficiary after a verifier has reviewed evidence, or as a refund to the donors themselves. Every step is a public, signed transaction.</p></div>
+<p>The target users are small and medium NGOs running local aid campaigns (food packages, school supplies, medical help), their donors, the people who receive help, and an independent verifier (for example an audit partner or a community committee). The prototype uses a test dollar token (MockUSDC) on a local Ethereum chain; no real money is involved.</p>
+
+<h3>Success criteria</h3>
+<table>
+  <tr><th>Criterion</th><th>How GiveChain meets it</th></tr>
+  <tr><td>The NGO cannot take donated money</td><td>The NGO wallet never receives tokens; the vault pays only approved beneficiaries (tested: the NGO's balance stays 0 through a full payout, scenario M1)</td></tr>
+  <tr><td>No payment without independent approval</td><td>Only a Verifier (on-chain Auditor role) can approve, and never for a campaign it runs or a payment to itself (S5, M5)</td></tr>
+  <tr><td>Anyone can check the record</td><td>Every amount on the website is rebuilt from chain events, and the Transparency page compares it with the vault's real token balance (Figure 9)</td></tr>
+  <tr><td>Donors are protected if a campaign ends</td><td>Each donor can claim a pro-rata share of unspent money once a campaign is completed or cancelled (M4)</td></tr>
+  <tr><td>Beneficiaries' personal data stays private</td><td>Only a wallet and a salted identity hash go on-chain; names and ID numbers are visible only to the campaign's NGO and verifiers</td></tr>
+</table>
+
+<!-- ============================ 2 ============================ -->
+<h2 class="nobreak">2. Why blockchain, and what stays off-chain</h2>
+<p>A blockchain is justified only where several parties who do not fully trust each other must share one record and one set of rules. That is the situation here: donors, the NGO, the verifier and beneficiaries have different interests, and none of them should be the single keeper of the money or of the record.</p>
+<table>
+  <tr><th style="width:36%">Need</th><th>Why a blockchain fits</th><th style="width:30%">Alternative considered</th></tr>
+  <tr><td>Nobody, including the NGO, can quietly move donated money</td><td>The vault's rules are code that nobody can change after deployment; there is no admin withdrawal function</td><td>A bank escrow account: still controlled by one party, no public rules</td></tr>
+  <tr><td>Donors can verify spending without trusting a website</td><td>Balances and every transfer are public; the site's totals can be checked against the chain</td><td>A public database: the operator can edit or delete rows</td></tr>
+  <tr><td>Approvals cannot be denied or edited later</td><td>Every approval is a signed, timestamped transaction tied to the verifier's key</td><td>Signed PDF reports: hard to check and not linked to the money</td></tr>
+  <tr><td>Several organisations share one record without a central owner</td><td>A shared ledger with no single owner; roles are enforced by the contracts</td><td>A central platform: one company becomes the trusted party</td></tr>
+</table>
+<h3>What blockchain does not solve, and how GiveChain handles it</h3>
+<ul>
+  <li><b>Real-world truth (the oracle problem).</b> The chain proves that a verifier approved a payment and which key signed it, not that food was really delivered or who owns a key. GiveChain makes the verifier's decision explicit, permanent and attributable, separates the person who requests a payment from the person who approves it, and lets the beneficiary confirm receipt on-chain.</li>
+  <li><b>Privacy.</b> Public chains are readable by everyone, forever. No personal data goes on-chain. A beneficiary is a wallet plus a salted hash of their ID (section 4.6), which is enough to block the same person being registered twice without revealing who they are.</li>
+  <li><b>Large files.</b> Evidence (receipts, photos) and campaign descriptions are stored in a content-addressed IPFS store. The chain stores only a fingerprint (<code>keccak256</code> of the content identifier), so the file can never be swapped without detection.</li>
+  <li><b>Search and convenience.</b> Lists, histories and totals come from an off-chain indexer that is rebuilt from chain events, so it is fast but never the source of truth.</li>
+  <li><b>Logins.</b> Email and password accounts are off-chain conveniences that decide which portal a person sees. They never grant power: what a person may do is always read from the contracts.</li>
+</ul>
+
+<!-- ============================ 3 ============================ -->
+<h2>3. Use case: roles and workflows</h2>
+<h3>Roles</h3>
+<table>
+  <tr><th>Role</th><th>Kind</th><th>Can</th><th>Cannot</th></tr>
+  <tr><td><b>Admin</b></td><td>On-chain role</td><td>Grant and revoke roles (approve NGO and verifier applications), cancel any campaign</td><td>Move money, approve anything, redirect payouts</td></tr>
+  <tr><td><b>Pauser</b></td><td>On-chain role</td><td>Pause and unpause every state change in all contracts</td><td>Anything else</td></tr>
+  <tr><td><b>NGO</b></td><td>On-chain role</td><td>Create and close its own campaigns, select and register beneficiaries, submit payment requests with evidence, release approved payments</td><td>Approve its own requests, pay itself, act on other NGOs' campaigns</td></tr>
+  <tr><td><b>Verifier</b> (contract name: Auditor)</td><td>On-chain role</td><td>Approve or revoke beneficiaries; approve, reject or cancel payment requests</td><td>Act on a campaign it runs, approve a payment to itself, release money. One wallet can never be both NGO and Verifier</td></tr>
+  <tr><td><b>Donor</b></td><td>Any wallet</td><td>Donate to a campaign, claim a refund from a closed campaign</td><td>Refund twice or refund from a running campaign</td></tr>
+  <tr><td><b>Beneficiary</b></td><td>Any wallet registered in a campaign</td><td>Apply for help, receive payments, confirm receipt</td><td>Confirm someone else's payment</td></tr>
+</table>
+
+<h3>Workflows</h3>
+<p>Each workflow is a sequence of real transactions with lifecycle transitions; together they give six user workflows and five distinct roles, well above the minimum of three workflows and two roles.</p>
+<ol>
+  <li><b>Onboarding:</b> a person signs up as an NGO or verifier and links a MetaMask wallet by signing a message; the admin approves the application, which grants the role on-chain.</li>
+  <li><b>Campaign:</b> the NGO creates a campaign (target amount and IPFS details) → Active → Completed or Cancelled.</li>
+  <li><b>Beneficiary:</b> a person applies to a campaign (or the NGO adds them directly) → the NGO selects them, which registers wallet + identity commitment on-chain → a verifier approves (or revokes).</li>
+  <li><b>Donation:</b> the donor approves the token, then donates to one campaign; the money is tracked per campaign.</li>
+  <li><b>Payment (milestone):</b> the NGO submits a request with evidence → a verifier approves (money reserved) or rejects → the NGO releases (vault pays the beneficiary directly) → the beneficiary confirms receipt. A verifier can cancel an approved but unpaid request.</li>
+  <li><b>Refund:</b> when a campaign closes, each donor can claim their pro-rata share of unspent money, once. In an emergency the pauser stops every state change with one switch.</li>
+</ol>
+
+<figure>
+<svg viewBox="0 0 680 230" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#33433e"/></marker></defs>
+  <!-- lanes -->
+  <g>
+    <rect x="0" y="0" width="680" height="44" fill="#f6faf8"/><rect x="0" y="46" width="680" height="44" fill="#fff"/>
+    <rect x="0" y="92" width="680" height="44" fill="#f6faf8"/><rect x="0" y="138" width="680" height="44" fill="#fff"/>
+    <rect x="0" y="184" width="680" height="44" fill="#f6faf8"/>
+    <text x="8" y="26" class="t-b">Admin</text><text x="8" y="72" class="t-b">NGO</text><text x="8" y="118" class="t-b">Verifier</text><text x="8" y="164" class="t-b">Donor</text><text x="8" y="210" class="t-b">Beneficiary</text>
+  </g>
+  <rect x="82" y="10" width="90" height="26" rx="4" class="boxg"/><text x="127" y="27" text-anchor="middle">grant NGO role</text>
+  <rect x="82" y="56" width="90" height="26" rx="4" class="box"/><text x="127" y="73" text-anchor="middle">create campaign</text>
+  <rect x="82" y="194" width="90" height="26" rx="4" class="box"/><text x="127" y="211" text-anchor="middle">apply for help</text>
+  <rect x="186" y="56" width="96" height="26" rx="4" class="box"/><text x="234" y="73" text-anchor="middle">select (register)</text>
+  <rect x="186" y="102" width="96" height="26" rx="4" class="boxg"/><text x="234" y="119" text-anchor="middle">approve person</text>
+  <rect x="186" y="148" width="96" height="26" rx="4" class="box"/><text x="234" y="165" text-anchor="middle">donate</text>
+  <rect x="296" y="56" width="96" height="26" rx="4" class="box"/><text x="344" y="73" text-anchor="middle">submit payment</text>
+  <rect x="296" y="102" width="96" height="26" rx="4" class="boxg"/><text x="344" y="119" text-anchor="middle">approve + reserve</text>
+  <rect x="406" y="56" width="96" height="26" rx="4" class="box"/><text x="454" y="73" text-anchor="middle">release (pay)</text>
+  <rect x="406" y="194" width="96" height="26" rx="4" class="boxg"/><text x="454" y="211" text-anchor="middle">receives tokens</text>
+  <rect x="516" y="194" width="90" height="26" rx="4" class="box"/><text x="561" y="211" text-anchor="middle">confirm receipt</text>
+  <rect x="516" y="56" width="90" height="26" rx="4" class="box"/><text x="561" y="73" text-anchor="middle">close campaign</text>
+  <rect x="516" y="148" width="90" height="26" rx="4" class="box"/><text x="561" y="165" text-anchor="middle">claim refund</text>
+  <path d="M127,36 V56" class="ln" marker-end="url(#m1)"/>
+  <path d="M172,69 H186" class="ln" marker-end="url(#m1)"/>
+  <path d="M172,207 H178 V75 H186" class="dash" marker-end="url(#m1)"/>
+  <path d="M234,82 V102" class="ln" marker-end="url(#m1)"/>
+  <path d="M282,115 H289 V69 H296" class="ln" marker-end="url(#m1)"/>
+  <path d="M282,161 H290 V122 H296" class="dash" marker-end="url(#m1)"/>
+  <path d="M344,82 V102" class="ln" marker-end="url(#m1)"/>
+  <path d="M392,115 H399 V69 H406" class="ln" marker-end="url(#m1)"/>
+  <path d="M454,82 V194" class="ln" marker-end="url(#m1)"/>
+  <path d="M502,207 H516" class="ln" marker-end="url(#m1)"/>
+  <path d="M561,82 V148" class="dash" marker-end="url(#m1)"/>
+  <text x="620" y="73" class="t-s">→ Completed</text>
+  <text x="566" y="120" class="t-s">unspent money</text>
+  <text x="622" y="165" class="t-s">pro-rata, once</text>
+  <text x="620" y="211" class="t-s">on-chain</text>
+</svg>
+<figcaption><b>Figure 1. Workflow overview.</b> Each box is one signed transaction by the wallet of that lane (green boxes are approvals or value transfers). Solid arrows show the main payment path; dashed arrows show inputs that enable a step (an application, a donation, a closed campaign).</figcaption>
+</figure>
+
+<h3>Permission matrix</h3>
+<table>
+  <tr><th>Action (contract function)</th><th>Admin</th><th>NGO</th><th>Verifier</th><th>Pauser</th><th>Donor</th><th>Beneficiary</th></tr>
+  <tr><td>Grant / revoke roles</td><td>✓</td><td></td><td></td><td></td><td></td><td></td></tr>
+  <tr><td>Pause / unpause</td><td></td><td></td><td></td><td>✓</td><td></td><td></td></tr>
+  <tr><td><code>createCampaign</code>, <code>completeCampaign</code></td><td></td><td>✓ own</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td><code>cancelCampaign</code></td><td>✓ any</td><td>✓ own</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td><code>registerBeneficiary</code></td><td></td><td>✓ own campaign</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td><code>approveBeneficiary</code>, <code>revokeBeneficiary</code></td><td></td><td></td><td>✓ not self</td><td></td><td></td><td></td></tr>
+  <tr><td><code>submitMilestone</code>, <code>releaseMilestone</code></td><td></td><td>✓ own campaign</td><td></td><td></td><td></td><td></td></tr>
+  <tr><td><code>approveMilestone</code>, <code>rejectMilestone</code></td><td></td><td></td><td>✓ not own campaign / not payee</td><td></td><td></td><td></td></tr>
+  <tr><td><code>cancelMilestone</code></td><td></td><td></td><td>✓</td><td></td><td></td><td></td></tr>
+  <tr><td><code>donate</code></td><td colspan="6" style="text-align:center">anyone with tokens</td></tr>
+  <tr><td><code>claimRefund</code></td><td></td><td></td><td></td><td></td><td>✓ own share</td><td></td></tr>
+  <tr><td><code>confirmReceipt</code></td><td></td><td></td><td></td><td></td><td></td><td>✓ own payment</td></tr>
+</table>
+
+<!-- ============================ 4 ============================ -->
+<h2>4. Architecture</h2>
+<h3>4.1 Components</h3>
+<p>GiveChain has three layers. The <b>smart contracts</b> hold the money and enforce every rule. The <b>browser</b> (React frontend plus MetaMask) lets each person act with their own key. The <b>off-chain backend</b> stores files, indexes chain events for fast reading and manages logins. Only the contracts are trusted; the frontend and backend are conveniences whose data can always be re-checked against the chain.</p>
+<figure>
+<svg viewBox="0 0 680 375" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="m2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#33433e"/></marker></defs>
+  <rect x="8" y="22" width="128" height="290" rx="6" class="box"/>
+  <text x="72" y="44" text-anchor="middle" class="t-h">People</text>
+  <text x="22" y="72">Donor</text><text x="22" y="96">Beneficiary</text><text x="22" y="120">NGO</text><text x="22" y="144">Verifier</text><text x="22" y="168">Admin / Pauser</text>
+  <text x="22" y="200" class="t-s">each with their own</text><text x="22" y="213" class="t-s">MetaMask wallet and</text><text x="22" y="226" class="t-s">an email login</text>
+
+  <rect x="162" y="22" width="196" height="186" rx="6" class="grp"/>
+  <text x="172" y="38" class="t-h">Browser</text>
+  <rect x="176" y="50" width="168" height="48" rx="5" class="boxg"/><text x="260" y="70" text-anchor="middle" class="t-b">React frontend</text><text x="260" y="86" text-anchor="middle" class="t-s">portals per role, ethers v6</text>
+  <rect x="176" y="142" width="168" height="48" rx="5" class="boxg"/><text x="260" y="162" text-anchor="middle" class="t-b">MetaMask</text><text x="260" y="178" text-anchor="middle" class="t-s">holds keys, signs transactions</text>
+
+  <rect x="384" y="22" width="290" height="186" rx="6" class="grp"/>
+  <text x="394" y="38" class="t-h">Ethereum test chain</text><text x="540" y="38" class="t-s">Hardhat 31337 / Ganache 1337</text>
+  <rect x="396" y="50" width="128" height="34" rx="4" class="box"/><text x="460" y="71" text-anchor="middle">GiveChainAccess</text>
+  <rect x="536" y="50" width="128" height="34" rx="4" class="box"/><text x="600" y="71" text-anchor="middle">ProjectRegistry</text>
+  <rect x="396" y="96" width="128" height="34" rx="4" class="box"/><text x="460" y="117" text-anchor="middle">DonationVault</text>
+  <rect x="536" y="96" width="128" height="34" rx="4" class="box"/><text x="600" y="117" text-anchor="middle">MilestoneDisbursement</text>
+  <rect x="396" y="142" width="128" height="34" rx="4" class="box"/><text x="460" y="163" text-anchor="middle">MockUSDC (ERC-20)</text>
+  <text x="600" y="157" text-anchor="middle" class="t-s">rules + money</text><text x="600" y="170" text-anchor="middle" class="t-s">source of truth</text>
+
+  <rect x="162" y="236" width="512" height="132" rx="6" class="grp"/>
+  <text x="172" y="252" class="t-h">Off-chain backend</text><text x="540" y="252" class="t-s">Node.js + Express, :4000</text>
+  <rect x="176" y="266" width="112" height="44" rx="4" class="box"/><text x="232" y="286" text-anchor="middle" class="t-b">REST API</text><text x="232" y="300" text-anchor="middle" class="t-s">31 endpoints</text>
+  <rect x="300" y="266" width="112" height="44" rx="4" class="box"/><text x="356" y="286" text-anchor="middle" class="t-b">Event indexer</text><text x="356" y="300" text-anchor="middle" class="t-s">in memory</text>
+  <rect x="424" y="266" width="112" height="44" rx="4" class="box"/><text x="480" y="286" text-anchor="middle" class="t-b">Accounts store</text><text x="480" y="300" text-anchor="middle" class="t-s">JSON file</text>
+  <rect x="548" y="266" width="112" height="44" rx="4" class="box"/><text x="604" y="286" text-anchor="middle" class="t-b">IPFS store</text><text x="604" y="300" text-anchor="middle" class="t-s">CIDv1, sha2-256</text>
+  <text x="356" y="330" text-anchor="middle" class="t-s">rebuilt from events</text><text x="356" y="343" text-anchor="middle" class="t-s">on every start</text>
+  <text x="480" y="330" text-anchor="middle" class="t-s">scrypt hashes, sessions,</text><text x="480" y="343" text-anchor="middle" class="t-s">applications</text>
+  <text x="604" y="330" text-anchor="middle" class="t-s">CID re-checked on</text><text x="604" y="343" text-anchor="middle" class="t-s">every read</text>
+  <text x="232" y="330" text-anchor="middle" class="t-s">uploads, history,</text><text x="232" y="343" text-anchor="middle" class="t-s">logins, totals</text>
+
+  <path d="M136,74 H176" class="ln" marker-end="url(#m2)"/>
+  <path d="M260,98 V142" class="ln" marker-end="url(#m2)"/><text x="266" y="124" class="t-s">asks to sign</text>
+  <path d="M344,74 H396" class="dash" marker-end="url(#m2)"/><text x="350" y="68" class="t-s">reads</text>
+  <path d="M344,166 H384" class="ln" marker-end="url(#m2)"/><text x="347" y="160" class="t-s">signed</text><text x="347" y="180" class="t-s">tx</text>
+  <path d="M176,90 H150 V288 H176" class="ln" marker-end="url(#m2)"/><text x="146" y="250" class="t-s" transform="rotate(-90 146 250)">HTTP / JSON</text>
+  <path d="M440,208 V230 H356 V266" class="dash" marker-end="url(#m2)"/><text x="364" y="226" class="t-s">events (logs)</text>
+  <path d="M500,266 V208" class="dash" marker-end="url(#m2)"/><text x="506" y="228" class="t-s">reads roles</text>
+  <path d="M288,288 H300" class="ln"/><path d="M412,288 H424" class="ln"/><path d="M536,288 H548" class="ln"/>
+</svg>
+<figcaption><b>Figure 2. System components.</b> Solid arrows are actions; dashed arrows are reads. Money and permissions exist only on-chain. The backend reads roles from <code>GiveChainAccess</code> instead of storing them, so a login can never grant power.</figcaption>
+</figure>
+<table>
+  <tr><th>Component</th><th>Job</th><th>Trusted for</th></tr>
+  <tr><td>Smart contracts</td><td>Hold the money and enforce every rule</td><td>Everything involving money and permissions</td></tr>
+  <tr><td>MetaMask</td><td>Holds each user's private key and signs transactions</td><td>Proving which key is acting</td></tr>
+  <tr><td>React frontend</td><td>Public site and one portal per role</td><td>Nothing; contracts re-check everything</td></tr>
+  <tr><td>Backend: IPFS store</td><td>Stores evidence and campaign details by content identifier (CID)</td><td>File integrity (the CID changes if the file changes), not that the file is true</td></tr>
+  <tr><td>Backend: indexer + API</td><td>Copies chain events into a searchable in-memory index</td><td>Convenience only; rebuilt from the chain on every start</td></tr>
+  <tr><td>Backend: accounts</td><td>Email/password logins, linked wallets, applications</td><td>Which portal to show; never which on-chain actions are allowed</td></tr>
+</table>
+
+<h3>4.2 Contracts and inheritance</h3>
+<p>The system is split by responsibility, not by file. Each contract owns one kind of data. Inheritance is used where behaviour is identical across contracts; composition through interfaces is used where contracts must cooperate without trusting each other's internals.</p>
+<figure>
+<svg viewBox="0 0 680 372" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="tri" viewBox="0 0 12 12" refX="11" refY="6" markerWidth="11" markerHeight="11" orient="auto"><path d="M1,1 L11,6 L1,11 z" fill="#fff" stroke="#33433e" stroke-width="1.1"/></marker>
+    <marker id="m3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10" fill="none" stroke="#33433e" stroke-width="1.4"/></marker>
+  </defs>
+  <text x="8" y="12" class="t-s">OpenZeppelin v5 (reused, audited)</text>
+  <rect x="30" y="20" width="120" height="40" rx="4" class="boxoz"/><text x="90" y="44" text-anchor="middle">ERC20</text>
+  <rect x="280" y="20" width="120" height="40" rx="4" class="boxoz"/><text x="340" y="44" text-anchor="middle">ReentrancyGuard</text>
+  <rect x="430" y="20" width="120" height="40" rx="4" class="boxoz"/><text x="490" y="44" text-anchor="middle">AccessControl</text>
+  <rect x="558" y="20" width="114" height="40" rx="4" class="boxoz"/><text x="615" y="44" text-anchor="middle">Pausable</text>
+
+  <rect x="20" y="110" width="140" height="44" rx="4" class="box"/><text x="90" y="136" text-anchor="middle" class="t-b">MockUSDC</text>
+  <rect x="265" y="110" width="150" height="44" rx="4" class="boxg"/><text x="340" y="128" text-anchor="middle" class="t-s">«abstract»</text><text x="340" y="144" text-anchor="middle" class="t-b">AccessControlBase</text>
+  <rect x="480" y="110" width="150" height="44" rx="4" class="box"/><text x="555" y="128" text-anchor="middle" class="t-b">GiveChainAccess</text><text x="555" y="144" text-anchor="middle" class="t-s">roles + single pause</text>
+
+  <rect x="20" y="240" width="140" height="44" rx="4" class="box"/><text x="90" y="258" text-anchor="middle" class="t-b">DonationVault</text><text x="90" y="274" text-anchor="middle" class="t-s">holds all tokens</text>
+  <rect x="265" y="240" width="150" height="44" rx="4" class="box"/><text x="340" y="258" text-anchor="middle" class="t-b">ProjectRegistry</text><text x="340" y="274" text-anchor="middle" class="t-s">campaigns, beneficiaries</text>
+  <rect x="480" y="240" width="170" height="44" rx="4" class="box"/><text x="565" y="258" text-anchor="middle" class="t-b">MilestoneDisbursement</text><text x="565" y="274" text-anchor="middle" class="t-s">payment workflow</text>
+
+  <path d="M90,110 V60" class="ln" marker-end="url(#tri)"/>
+  <path d="M340,110 V60" class="ln" marker-end="url(#tri)"/>
+  <path d="M530,110 L495,60" class="ln" marker-end="url(#tri)"/>
+  <path d="M590,110 L612,60" class="ln" marker-end="url(#tri)"/>
+  <path d="M130,240 L318,154" class="ln" marker-end="url(#tri)"/>
+  <path d="M340,240 V154" class="ln" marker-end="url(#tri)"/>
+  <path d="M520,240 L362,154" class="ln" marker-end="url(#tri)"/>
+
+  <path d="M415,132 H480" class="dash" marker-end="url(#m3)"/><text x="418" y="126" class="t-s">role? paused?</text>
+  <path d="M60,240 V154" class="dash" marker-end="url(#m3)"/><text x="8" y="196" class="t-s">SafeERC20</text><text x="8" y="208" class="t-s">transfers</text>
+  <path d="M160,262 H265" class="dash" marker-end="url(#m3)"/><text x="166" y="256" class="t-s">re-checks eligibility</text>
+  <path d="M480,262 H415" class="dash" marker-end="url(#m3)"/><text x="420" y="300" class="t-s">status, owner,</text><text x="420" y="312" class="t-s">eligibility</text>
+  <path d="M565,284 V325 H90 V284" class="dash" marker-end="url(#m3)"/><text x="327" y="340" text-anchor="middle" class="t-s">reserveFunds / releaseFunds / cancelReservation (the only allowed caller; link set once)</text>
+
+  <g transform="translate(20,356)">
+    <path d="M0,6 H26" class="ln" marker-end="url(#tri)"/><text x="32" y="10" class="t-s">inherits</text>
+    <path d="M100,6 H126" class="dash" marker-end="url(#m3)"/><text x="132" y="10" class="t-s">calls via interface</text>
+  </g>
+</svg>
+<figcaption><b>Figure 3. Contract inheritance and interaction.</b> Grey: reused OpenZeppelin code. Green: the shared abstract base inherited by the three workflow contracts. Every cross-contract call goes through an interface (<code>IGiveChainAccess</code>, <code>IProjectRegistry</code>, <code>IDonationVault</code>).</figcaption>
+</figure>
+<table>
+  <tr><th>Contract</th><th>Responsibility</th><th class="n">Lines</th></tr>
+  <tr><td><code>GiveChainAccess</code></td><td>All roles and the single emergency pause; refuses NGO + Auditor on one wallet. Inherits OpenZeppelin <code>AccessControl</code> and <code>Pausable</code></td><td class="n">71</td></tr>
+  <tr><td><code>AccessControlBase</code> (abstract)</td><td>Inherited by the three workflow contracts: <code>onlyRole</code> and <code>whenNotPaused</code> modifiers (both ask <code>GiveChainAccess</code>) and the reentrancy guard</td><td class="n">55</td></tr>
+  <tr><td><code>ProjectRegistry</code></td><td>Campaign and beneficiary life cycles, duplicate-person protection; holds no money</td><td class="n">300</td></tr>
+  <tr><td><code>DonationVault</code></td><td>Holds all tokens; per-campaign accounting; donations, reservations, payouts, pro-rata refunds</td><td class="n">323</td></tr>
+  <tr><td><code>MilestoneDisbursement</code></td><td>Payment workflow (submit, approve, reject, release, cancel, confirm); holds no money</td><td class="n">261</td></tr>
+  <tr><td><code>MockUSDC</code></td><td>Test dollar token, 6 decimals, capped faucet</td><td class="n">32</td></tr>
+  <tr><td>Interfaces + <code>Roles</code> library</td><td>All contract-to-contract calls; shared role identifiers</td><td class="n">120</td></tr>
+</table>
+<p><b>Why inheritance:</b> the role check, the pause check and reentrancy protection are identical in three contracts, so they are written once in <code>AccessControlBase</code>. A change to how permissions are checked is made in one place and tested once (12 tests through a harness contract). <b>Why a separate access contract instead of inheriting <code>AccessControl</code> three times:</b> roles are granted once and one pause switch stops everything; with per-contract roles the NGO role had to be granted three times and an emergency needed three pause calls (a problem in the first prototype). <b>Why composition between the workflow contracts:</b> each contract owns one kind of data and exposes only what others need. The vault does not need to know about milestones, and the milestone contract does not hold money, so a bug in one cannot silently corrupt the other's state.</p>
+
+<h3>4.3 Contract interaction: one payment</h3>
+<p>Figure 4 shows how the contracts cooperate for one payment. The key property is that the vault re-checks everything itself even though only <code>MilestoneDisbursement</code> may call it (decision D3 in section 5).</p>
+<figure>
+<svg viewBox="0 0 680 400" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="m4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#33433e"/></marker></defs>
+  <rect x="0" y="60" width="680" height="64" fill="#f6faf8"/><rect x="0" y="124" width="680" height="96" fill="#fff"/>
+  <rect x="0" y="220" width="680" height="118" fill="#f6faf8"/><rect x="0" y="338" width="680" height="56" fill="#fff"/>
+  <text x="4" y="74" class="t-s" font-weight="600">1 Submit</text><text x="4" y="138" class="t-s" font-weight="600">2 Approve</text><text x="4" y="234" class="t-s" font-weight="600">3 Release</text><text x="4" y="352" class="t-s" font-weight="600">4 Confirm</text>
+  <g>
+    <rect x="62" y="8" width="70" height="34" rx="4" class="box"/><text x="97" y="29" text-anchor="middle" class="t-b">NGO</text>
+    <rect x="140" y="8" width="70" height="34" rx="4" class="box"/><text x="175" y="29" text-anchor="middle" class="t-b">Verifier</text>
+    <rect x="218" y="8" width="80" height="34" rx="4" class="box"/><text x="258" y="29" text-anchor="middle" class="t-b">Beneficiary</text>
+    <rect x="310" y="8" width="104" height="34" rx="4" class="boxg"/><text x="362" y="22" text-anchor="middle" class="t-s">Milestone-</text><text x="362" y="35" text-anchor="middle" class="t-b">Disbursement</text>
+    <rect x="428" y="8" width="88" height="34" rx="4" class="boxg"/><text x="472" y="29" text-anchor="middle" class="t-b">Registry</text>
+    <rect x="528" y="8" width="80" height="34" rx="4" class="boxg"/><text x="568" y="29" text-anchor="middle" class="t-b">Vault</text>
+    <rect x="616" y="8" width="60" height="34" rx="4" class="boxoz"/><text x="646" y="29" text-anchor="middle" class="t-b">Token</text>
+  </g>
+  <path d="M97,42 V394 M175,42 V394 M258,42 V394 M362,42 V394 M472,42 V394 M568,42 V394 M646,42 V394" class="life"/>
+  <path d="M97,86 H362" class="ln" marker-end="url(#m4)"/><text x="102" y="82">submitMilestone(campaign, beneficiary, amount, evidenceCID)</text>
+  <path d="M362,110 H472" class="ln" marker-end="url(#m4)"/><text x="368" y="104" class="t-s">Active? owner? approved?</text>
+  <path d="M175,150 H362" class="ln" marker-end="url(#m4)"/><text x="180" y="146">approveMilestone(id)</text>
+  <path d="M362,174 H568" class="ln" marker-end="url(#m4)"/><text x="368" y="168" class="t-s">reserveFunds(id, beneficiary, amount)</text>
+  <path d="M568,196 H472" class="ln" marker-end="url(#m4)"/><text x="478" y="192" class="t-s">re-check eligibility</text>
+  <text x="562" y="214" text-anchor="end" class="t-s">vault: available ≥ amount → reserve it</text>
+  <path d="M97,246 H362" class="ln" marker-end="url(#m4)"/><text x="102" y="242">releaseMilestone(id)</text>
+  <path d="M362,270 H568" class="ln" marker-end="url(#m4)"/><text x="368" y="266" class="t-s">releaseFunds(id)</text>
+  <path d="M568,292 H472" class="ln" marker-end="url(#m4)"/><text x="478" y="288" class="t-s">re-check status + eligibility</text>
+  <path d="M568,316 H646" class="ln" marker-end="url(#m4)"/><text x="574" y="312" class="t-s">transfer</text>
+  <path d="M646,328 H258" class="dash" marker-end="url(#m4)"/><text x="372" y="322" class="t-s">tokens go to the beneficiary's wallet</text>
+  <path d="M258,368 H362" class="ln" marker-end="url(#m4)"/><text x="263" y="364">confirmReceipt(id)</text>
+  <text x="380" y="372" class="t-s">status Released → Confirmed (on-chain receipt)</text>
+</svg>
+<figcaption><b>Figure 4. Payment sequence across contracts.</b> The NGO never receives tokens: the vault transfers straight to the beneficiary. Approval reserves the money, so two approvals can never together exceed a campaign's balance. State is updated before each external call (checks-effects-interactions).</figcaption>
+</figure>
+
+<h3>4.4 State machines</h3>
+<p>All non-trivial behaviour is expressed as explicit state machines. Every function first checks the current state, which is also what blocks duplicate and replayed actions.</p>
+<figure>
+<svg viewBox="0 0 680 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="m5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#33433e"/></marker></defs>
+  <text x="4" y="14" class="t-h">Campaign</text>
+  <circle cx="14" cy="66" r="6" fill="#33433e"/>
+  <rect x="44" y="51" width="84" height="30" rx="15" class="boxg"/><text x="86" y="70" text-anchor="middle" class="t-b">Active</text>
+  <rect x="170" y="24" width="84" height="30" rx="15" class="box" style="fill:#eef0f2"/><text x="212" y="43" text-anchor="middle">Completed</text>
+  <rect x="170" y="88" width="84" height="30" rx="15" class="box" style="fill:#eef0f2"/><text x="212" y="107" text-anchor="middle">Cancelled</text>
+  <path d="M20,66 H44" class="ln" marker-end="url(#m5)"/>
+  <path d="M128,60 L170,42" class="ln" marker-end="url(#m5)"/><path d="M128,72 L170,100" class="ln" marker-end="url(#m5)"/>
+  <text x="50" y="38" class="t-s">complete (NGO)</text><text x="36" y="100" class="t-s">cancel (NGO / Admin)</text>
+  <text x="4" y="146" class="t-s">donations and payments only while Active;</text><text x="4" y="158" class="t-s">refunds only after it closes</text>
+
+  <text x="4" y="186" class="t-h">Beneficiary (per campaign)</text>
+  <circle cx="14" cy="238" r="6" fill="#33433e"/>
+  <rect x="34" y="223" width="88" height="30" rx="15" class="box"/><text x="78" y="242" text-anchor="middle">Registered</text>
+  <rect x="170" y="200" width="84" height="30" rx="15" class="boxg"/><text x="212" y="219" text-anchor="middle" class="t-b">Approved</text>
+  <rect x="170" y="262" width="84" height="30" rx="15" class="box" style="fill:#eef0f2"/><text x="212" y="281" text-anchor="middle">Revoked</text>
+  <path d="M20,238 H34" class="ln" marker-end="url(#m5)"/>
+  <path d="M122,232 L170,217" class="ln" marker-end="url(#m5)"/><path d="M122,244 L170,272" class="ln" marker-end="url(#m5)"/>
+  <path d="M212,230 V262" class="ln" marker-end="url(#m5)"/>
+  <text x="34" y="212" class="t-s">approve (verifier)</text><text x="218" y="250" class="t-s">revoke</text><text x="104" y="284" class="t-s">revoke</text>
+
+  <line x1="290" y1="0" x2="290" y2="300" stroke="#d7e0dc"/>
+  <text x="304" y="14" class="t-h">Payment request (milestone)</text>
+  <circle cx="312" cy="62" r="6" fill="#33433e"/>
+  <rect x="332" y="47" width="96" height="30" rx="15" class="box"/><text x="380" y="66" text-anchor="middle">Submitted</text>
+  <rect x="490" y="47" width="96" height="30" rx="15" class="boxg"/><text x="538" y="66" text-anchor="middle" class="t-b">Approved</text>
+  <rect x="332" y="140" width="96" height="30" rx="15" class="box" style="fill:#eef0f2"/><text x="380" y="159" text-anchor="middle">Rejected</text>
+  <rect x="490" y="140" width="96" height="30" rx="15" class="boxg"/><text x="538" y="159" text-anchor="middle" class="t-b">Released</text>
+  <rect x="490" y="236" width="96" height="30" rx="15" class="box" style="fill:#eef0f2"/><text x="538" y="255" text-anchor="middle">Confirmed</text>
+  <rect x="596" y="140" width="80" height="30" rx="15" class="box" style="fill:#eef0f2"/><text x="636" y="159" text-anchor="middle">Cancelled</text>
+  <path d="M318,62 H332" class="ln" marker-end="url(#m5)"/>
+  <path d="M428,62 H490" class="ln" marker-end="url(#m5)"/><text x="432" y="30" class="t-s">approve (verifier)</text><text x="432" y="41" class="t-s">money reserved</text>
+  <path d="M380,77 V140" class="ln" marker-end="url(#m5)"/><text x="374" y="104" text-anchor="end" class="t-s">reject</text><text x="374" y="116" text-anchor="end" class="t-s">(verifier)</text>
+  <path d="M538,77 V140" class="ln" marker-end="url(#m5)"/><text x="532" y="104" class="t-s" text-anchor="end">release (NGO)</text><text x="532" y="117" class="t-s" text-anchor="end">vault pays</text>
+  <path d="M570,77 L626,140" class="ln" marker-end="url(#m5)"/><text x="604" y="98" class="t-s">cancel</text><text x="604" y="110" class="t-s">(verifier)</text>
+  <path d="M538,170 V236" class="ln" marker-end="url(#m5)"/><text x="544" y="200" class="t-s">confirmReceipt</text><text x="544" y="212" class="t-s">(beneficiary)</text>
+  <text x="304" y="210" class="t-s">paid at most once: the milestone</text><text x="304" y="222" class="t-s">and the vault both record it</text>
+  <text x="304" y="246" class="t-s">grey = final state</text>
+</svg>
+<figcaption><b>Figure 5. State machines.</b> Campaign, beneficiary and payment-request life cycles as enforced in <code>ProjectRegistry</code> and <code>MilestoneDisbursement</code>; the vault keeps a matching reservation state (Reserved → Released or Cancelled).</figcaption>
+</figure>
+
+<h3>4.5 Money accounting per campaign</h3>
+<p>The vault keeps four numbers per campaign: <code>donated</code>, <code>reserved</code>, <code>released</code> and <code>refunded</code>. The money a campaign can still promise is <code>available = donated − reserved − released − refunded</code>. Approving a payment moves money from available to reserved; releasing moves it from reserved to released; cancelling returns it to available. An invariant test checks after a long mixed sequence that the vault's token balance equals the sum over all campaigns of <code>donated − released − refunded</code>.</p>
+<p><b>Refund rule.</b> When a campaign is Completed or Cancelled, a donor may claim once: <code>refund = contribution × (donated − released) / donated</code>. Example: a campaign raised 1,000 and paid out 400 before it was cancelled. A donor who gave 100 (10%) gets back 10% of the remaining 600, which is 60.</p>
+
+<h3>4.6 On-chain / off-chain data map</h3>
+<table>
+  <tr><th style="width:30%">Data</th><th style="width:30%">Where it is stored</th><th>Reason</th></tr>
+  <tr><td>Campaign id, NGO wallet, target, status</td><td>On-chain (storage)</td><td>Contract rules depend on it</td></tr>
+  <tr><td>Campaign title, description</td><td>IPFS; full CID in the <code>CampaignCreated</code> event, <code>keccak256(CID)</code> in storage</td><td>Too large for the chain; the stored hash fixes which file was published</td></tr>
+  <tr><td>Beneficiary wallet and status</td><td>On-chain</td><td>Payouts depend on it</td></tr>
+  <tr><td>Beneficiary identity commitment</td><td>On-chain: <code>keccak256(ngoKey, normalisedId)</code>, computed in the NGO's browser</td><td>Blocks registering the same person twice without revealing who they are</td></tr>
+  <tr><td>Names, ID numbers, phone, reason for applying</td><td>Backend accounts store, visible only to the campaign's NGO and to verifiers; never on-chain</td><td>Personal data must not be published permanently</td></tr>
+  <tr><td>Payment amount, beneficiary, status, approver</td><td>On-chain</td><td>Rules and transparency depend on it</td></tr>
+  <tr><td>Evidence files (receipts, photos)</td><td>IPFS; full CID in the <code>MilestoneSubmitted</code> event, hash in storage</td><td>The CID proves the file is unchanged; the verifier judges whether it is true</td></tr>
+  <tr><td>Donations, reservations, payouts, refunds</td><td>On-chain balances and events</td><td>The transparency promise</td></tr>
+  <tr><td>Searchable history and totals</td><td>Backend in-memory index</td><td>Rebuilt from chain events on every start; disposable</td></tr>
+  <tr><td>Email, password hash, display name, linked wallet</td><td>Backend accounts store (scrypt hashes)</td><td>Needed to log in; never decides permissions</td></tr>
+  <tr><td>Private keys, seed phrases</td><td>Only in each user's MetaMask</td><td>Never in the repository, the backend or the chain</td></tr>
+</table>
+
+<h3>4.7 Information flow and integrity</h3>
+<figure>
+<svg viewBox="0 0 680 246" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="m6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#33433e"/></marker></defs>
+  <rect x="6" y="20" width="100" height="54" rx="5" class="box"/><text x="56" y="42" text-anchor="middle" class="t-b">NGO browser</text><text x="56" y="58" text-anchor="middle" class="t-s">evidence file</text>
+  <rect x="160" y="20" width="132" height="54" rx="5" class="box"/><text x="226" y="42" text-anchor="middle" class="t-b">Backend IPFS store</text><text x="226" y="58" text-anchor="middle" class="t-s">CID = sha2-256(file)</text>
+  <rect x="328" y="20" width="160" height="54" rx="5" class="boxg"/><text x="408" y="40" text-anchor="middle" class="t-b">MilestoneDisbursement</text><text x="408" y="55" text-anchor="middle" class="t-s">stores keccak256(CID)</text><text x="408" y="67" text-anchor="middle" class="t-s">emits event with CID</text>
+  <rect x="524" y="20" width="150" height="54" rx="5" class="box"/><text x="599" y="42" text-anchor="middle" class="t-b">Event indexer</text><text x="599" y="58" text-anchor="middle" class="t-s">milestone + CID</text>
+  <path d="M106,40 H160" class="ln" marker-end="url(#m6)"/><text x="110" y="34" class="t-s">① upload</text>
+  <path d="M160,58 H106" class="ln" marker-end="url(#m6)"/><text x="112" y="72" class="t-s">② CID</text>
+  <path d="M56,74 V100 H408 V74" class="ln" marker-end="url(#m6)"/><text x="150" y="96" class="t-s">③ submitMilestone(..., CID) signed in MetaMask</text>
+  <path d="M488,47 H524" class="dash" marker-end="url(#m6)"/><text x="490" y="40" class="t-s">④ log</text>
+
+  <rect x="6" y="140" width="150" height="62" rx="5" class="box"/><text x="81" y="162" text-anchor="middle" class="t-b">Verifier browser</text><text x="81" y="178" text-anchor="middle" class="t-s">opens evidence</text><text x="81" y="192" text-anchor="middle" class="t-s">shows "verified" badge</text>
+  <rect x="210" y="140" width="190" height="62" rx="5" class="boxw"/><text x="305" y="160" text-anchor="middle" class="t-b">Check A (backend)</text><text x="305" y="176" text-anchor="middle" class="t-s">re-hash bytes, compare with CID</text><text x="305" y="190" text-anchor="middle" class="t-s">mismatch → file refused</text>
+  <rect x="440" y="140" width="234" height="62" rx="5" class="boxw"/><text x="557" y="160" text-anchor="middle" class="t-b">Check B (anyone)</text><text x="557" y="176" text-anchor="middle" class="t-s">keccak256(CID from event) must equal</text><text x="557" y="190" text-anchor="middle" class="t-s">the hash stored in the contract</text>
+  <path d="M156,171 H210" class="ln" marker-end="url(#m6)"/><text x="160" y="164" class="t-s">⑤ GET</text>
+  <path d="M400,171 H440" class="dash"/>
+  <path d="M599,74 V140" class="dash" marker-end="url(#m6)"/>
+  <text x="6" y="224" class="t-s">Failure handling: if the backend is down, nothing on-chain is lost and the index is rebuilt from events on restart;</text><text x="6" y="238" class="t-s">the frontend reads roles and balances straight from the contracts before every action.</text>
+</svg>
+<figcaption><b>Figure 6. Evidence flow and integrity checks.</b> The file's content identifier is fixed on-chain at submission. Check A is tested in <code>backend/test/ipfs.test.js</code> (a tampered file is refused); check B in <code>test/Security.test.js</code> (S6).</figcaption>
+</figure>
+<table>
+  <tr><th>Failure or attack</th><th>What happens</th></tr>
+  <tr><td>Backend restarts, or the chain is redeployed</td><td>The index is rebuilt from block 0 (or the deployment block); after a redeploy it detects the new addresses and starts over</td></tr>
+  <tr><td>Backend serves a wrong number</td><td>The Transparency page reads the vault's real token balance from the chain and shows whether it matches (Figure 9)</td></tr>
+  <tr><td>A stored file is changed on disk</td><td>Its hash no longer matches its CID, so the backend refuses to serve it</td></tr>
+  <tr><td>The website shows stale data after a transaction</td><td>After each confirmed transaction the frontend waits until the backend has indexed that block before refreshing lists</td></tr>
+  <tr><td>Someone edits the accounts file to make themselves an NGO</td><td>Nothing changes on-chain; NGO tools stay locked because the role is read from <code>GiveChainAccess</code></td></tr>
+</table>
+
+<h3>4.8 Trust boundaries</h3>
+<figure>
+<svg viewBox="0 0 680 250" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="m7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#33433e"/></marker></defs>
+  <rect x="6" y="10" width="214" height="232" rx="6" class="boxr zone"/>
+  <text x="18" y="30" class="t-h" style="fill:#a3271f">Not trusted</text>
+  <text x="18" y="54">NGO (not trusted with money)</text><text x="18" y="74">Donors, beneficiaries, anyone</text><text x="18" y="94">Attacker contracts / tokens</text>
+  <line x1="18" y1="108" x2="208" y2="108" stroke="#e3b9b5"/>
+  <text x="18" y="128">React frontend</text><text x="18" y="148">Backend index + API</text><text x="18" y="168">Accounts store</text><text x="18" y="188">IPFS files (integrity only)</text>
+  <text x="18" y="214" class="t-s">every action re-checked by the</text><text x="18" y="227" class="t-s">contracts; data re-checkable</text>
+
+  <rect x="246" y="10" width="186" height="232" rx="6" class="boxw zone"/>
+  <text x="258" y="30" class="t-h" style="fill:#9a5b00">Trusted for one job</text>
+  <text x="258" y="56" class="t-b">Admin</text><text x="258" y="70" class="t-s">assigns roles; cannot move money</text>
+  <text x="258" y="96" class="t-b">Pauser</text><text x="258" y="110" class="t-s">emergency stop only</text>
+  <text x="258" y="136" class="t-b">Verifier</text><text x="258" y="150" class="t-s">judges real-world evidence;</text><text x="258" y="163" class="t-s">cannot release, cannot act on</text><text x="258" y="176" class="t-s">own campaign or own payment</text>
+  <text x="258" y="214" class="t-s">every decision public and</text><text x="258" y="227" class="t-s">signed by their key</text>
+
+  <rect x="458" y="10" width="216" height="232" rx="6" class="boxg zone"/>
+  <text x="470" y="30" class="t-h">Enforced by code</text>
+  <rect x="472" y="44" width="188" height="28" rx="4" class="box"/><text x="566" y="62" text-anchor="middle">GiveChainAccess</text>
+  <rect x="472" y="80" width="188" height="28" rx="4" class="box"/><text x="566" y="98" text-anchor="middle">ProjectRegistry</text>
+  <rect x="472" y="116" width="188" height="28" rx="4" class="box"/><text x="566" y="134" text-anchor="middle">MilestoneDisbursement</text>
+  <rect x="472" y="170" width="188" height="28" rx="4" class="box"/><text x="566" y="188" text-anchor="middle">DonationVault</text>
+  <path d="M566,144 V170" class="ln" marker-end="url(#m7)"/>
+  <circle cx="590" cy="157" r="8" fill="#fff" stroke="#0f6b54"/><text x="590" y="161" text-anchor="middle" class="t-b" style="font-size:9.5px">2</text>
+  <text x="472" y="222" class="t-s">vault re-checks its only caller;</text><text x="472" y="235" class="t-s">tokens moved with SafeERC20 ③</text>
+
+  <path d="M220,60 H246" class="ln"/><path d="M432,60 H472" class="ln" marker-end="url(#m7)"/>
+  <circle cx="233" cy="60" r="8" fill="#fff" stroke="#a3271f"/><text x="233" y="64" text-anchor="middle" class="t-b" style="font-size:9.5px">1</text>
+  <path d="M220,188 H246" class="dash"/><path d="M432,188 H472" class="dash" marker-end="url(#m7)"/>
+  <circle cx="233" cy="188" r="8" fill="#fff" stroke="#a3271f"/><text x="233" y="192" text-anchor="middle" class="t-b" style="font-size:9.5px">4</text>
+</svg>
+<figcaption><b>Figure 7. Trust boundaries.</b> ① users → contracts: role, ownership and state checks on every call. ② MilestoneDisbursement → vault: one fixed caller, independent re-validation. ③ vault → token: SafeERC20 after state changes, under a reentrancy guard. ④ chain ↔ off-chain: only hashes and CIDs cross; off-chain data is re-checkable.</figcaption>
+</figure>
+
+<!-- ============================ 5 ============================ -->
+<h2>5. Key design decisions</h2>
+<p>The table records the decisions that shaped the system, the alternatives that were considered and the consequences that were accepted. Several came directly from a design review of the first prototype (section 6.4).</p>
+<table>
+  <tr><th style="width:4%">#</th><th style="width:20%">Decision</th><th style="width:22%">Alternatives considered</th><th>Why this option</th><th style="width:22%">Consequence accepted</th></tr>
+  <tr><td>D1</td><td>Money is held by a vault contract; the NGO never holds it</td><td>Donations sent to the NGO's wallet; NGO-controlled multisig</td><td>Removes custody risk entirely: misuse requires breaking the contract rules, not just a decision by the NGO</td><td>NGOs cannot pay suppliers directly; payments go to registered beneficiaries</td></tr>
+  <tr><td>D2</td><td>One <code>GiveChainAccess</code> contract for roles and pause; checks inherited from an abstract <code>AccessControlBase</code></td><td>Each contract inherits OpenZeppelin <code>AccessControl</code> and <code>Pausable</code> itself</td><td>Roles granted once, one emergency switch, identical checks everywhere, written and tested once</td><td>Each protected call makes an external call to the access contract (extra gas on every action)</td></tr>
+  <tr><td>D3</td><td>The vault re-checks eligibility, campaign status, balance and duplicates even though only one contract may call it</td><td>Trust the workflow contract's checks</td><td>Defence in depth: a bug in the workflow contract cannot pay the wrong person (tested with a mock caller that skips all checks)</td><td>About 5,000–10,000 extra gas per payout; kept deliberately (security over gas)</td></tr>
+  <tr><td>D4</td><td>The vault's caller is set once and can never change</td><td>An admin setter</td><td>A stolen admin key cannot redirect payouts to a malicious contract (M3)</td><td>A fix to the workflow contract means redeploying the vault too</td></tr>
+  <tr><td>D5</td><td>Separate accounting per campaign, with reservations on approval</td><td>One shared pool (first prototype); check balance only at release</td><td>Campaign A can never spend campaign B's money (M2); two approvals can never together exceed the balance (S7)</td><td>More storage per campaign; reduced by struct packing</td></tr>
+  <tr><td>D6</td><td>Pro-rata refunds after a campaign closes, claimed by each donor</td><td>Full refunds first-come-first-served; refunds closing for everyone at the first payout (first prototype)</td><td>Fair to every donor whatever the order of claims; no donor loses rights because of another campaign</td><td>Integer division leaves a few units (millionths of a dollar) in the vault</td></tr>
+  <tr><td>D7</td><td>A stable test token (MockUSDC, 6 decimals) with <code>SafeERC20</code></td><td>ETH donations (first prototype)</td><td>Aid budgets are in currency, not a volatile asset; matches how stablecoins are used; the specification asked for a mock ERC-20</td><td>Donors need a token approval before donating (two transactions)</td></tr>
+  <tr><td>D8</td><td>Store <code>keccak256(CID)</code> on-chain and the full CID in events; addresses <code>immutable</code>; packed structs</td><td>Store CID strings; mutable addresses; one value per slot</td><td>26.1% less gas per campaign with integrity unchanged (section 7)</td><td>CIDs read from events, not a view call; vault deployment +15.8%</td></tr>
+  <tr><td>D9</td><td>Identity commitment <code>keccak256(ngoKey, normalisedId)</code> computed in the browser; <code>ngoKey</code> derived from a deterministic wallet signature</td><td>Store the ID; hash without a key; a random salt per person</td><td>No personal data on-chain; the key stops guessing IDs from the hash; determinism lets the contract reject the same person under a new wallet</td><td>Duplicates are blocked within a campaign; a person may still be helped by several campaigns (intended)</td></tr>
+  <tr><td>D10</td><td>Disposable in-memory indexer rebuilt from chain events</td><td>A database as the source of truth (SQLite was planned)</td><td>The index can never drift from the chain for long and needs no migration; simpler to reason about</td><td>Start-up time grows with chain length (fine for a prototype)</td></tr>
+  <tr><td>D11</td><td>Email accounts off-chain; permissions always read from the chain</td><td>Wallet-only login; roles stored in the backend</td><td>Familiar login for non-technical users, while a compromised backend still cannot grant power</td><td>A second store to secure (scrypt hashes, HttpOnly sessions, rate limits)</td></tr>
+  <tr><td>D12</td><td>One global pause that stops every state change, including refunds</td><td>Per-function pauses; refunds exempt</td><td>Simple and predictable in an emergency; one switch</td><td>Donors wait for refunds while paused</td></tr>
+  <tr><td>D13</td><td>Separation of duties: a wallet can never be both NGO and Auditor; approvers cannot act on their own campaign or payment</td><td>Rely on the admin to grant roles carefully</td><td>Removes the simplest fraud: approving your own request (M5, S5)</td><td>Small organisations need two different people</td></tr>
+</table>
+
+<!-- ============================ 6 ============================ -->
+<h2>6. Implementation</h2>
+<h3>6.1 Smart contracts</h3>
+<ul>
+  <li><b>Language and libraries:</b> Solidity 0.8.28 (checked arithmetic), optimizer on (200 runs). OpenZeppelin v5 for <code>AccessControl</code>, <code>Pausable</code>, <code>ReentrancyGuard</code>, <code>ERC20</code>, <code>SafeERC20</code> and <code>SafeCast</code>.</li>
+  <li><b>Errors and documentation:</b> custom errors with arguments in every contract (for example <code>InsufficientAvailableFunds(campaignId, requested, available)</code>), which the frontend decodes into plain English; NatSpec on every public function.</li>
+  <li><b>Events:</b> 15 workflow events plus OpenZeppelin's role and pause events give the indexer a complete history.</li>
+  <li><b>Deployment order:</b> access → token → registry → vault → milestones → one-time vault link → role grants (<code>scripts/deploy.js</code>), writing addresses and ABIs to <code>deployments/&lt;network&gt;.json</code>, which the backend and frontend read.</li>
+</ul>
+<h3>6.2 Backend (off-chain component)</h3>
+<ul>
+  <li><b>IPFS service:</b> a local content-addressed store that computes real CIDv1 identifiers (raw codec, sha2-256) and re-hashes every file on read. Optional Pinata pinning and a public-gateway fallback whose content is also verified against the CID.</li>
+  <li><b>Event indexer:</b> reads all contract events from the deployment block, keeps an in-memory model of campaigns, beneficiaries, payments, donations and refunds, and polls for new blocks.</li>
+  <li><b>REST API:</b> 31 endpoints (14 for campaigns, history, totals and uploads; 17 for accounts, applications and admin review).</li>
+  <li><b>Accounts:</b> scrypt password hashes, random session tokens stored only as hashes in <code>HttpOnly</code> <code>SameSite=Lax</code> cookies (one cookie name per network), a login rate limit, and wallet linking by a signed one-time challenge checked with <code>verifyMessage</code>.</li>
+</ul>
+<h3>6.3 Frontend</h3>
+<ul>
+  <li><b>Public site:</b> home, campaign list, campaign page (Figure 8), transparency page (Figure 9) and an explanation of how it works.</li>
+  <li><b>Portals:</b> one sidebar portal per account type (Admin, NGO, Verifier, Donor, Beneficiary) with a setup checklist and to-do list. A role's tools appear only when its wallet holds the role on-chain.</li>
+  <li><b>Transactions:</b> every transaction goes through one runner that shows <i>Confirm in wallet → Pending (hash) → Confirmed (block)</i>, or <i>Rejected</i> / <i>Failed</i> with the contract's custom error decoded; success is never shown before the receipt. The site refuses to act when MetaMask is on a different wallet from the one linked to the account.</li>
+  <li><b>Off-chain features in the UI:</b> IPFS details and evidence with "verified against its fingerprint" badges, evidence upload, beneficiary applications, the indexed activity feed and the independent balance check. Review queues refresh every 8 seconds, so new requests appear without reloading.</li>
+</ul>
+
+<figure>
+<div class="shot crop" style="height:122mm"><img src="img/campaign.png" alt="Campaign page"></div>
+<figcaption><b>Figure 8. Public campaign page</b> (live local chain after <code>npm run seed:local</code>). Funding is split into available, reserved, paid and refunded, read from the vault. Each payment shows its full history (submitted, approved by the verifier, released by the NGO, confirmed by the beneficiary) with transaction hashes, and its evidence CID. The details file is marked as verified against its fingerprint. Only wallets and statuses of beneficiaries are public.</figcaption>
+</figure>
+
+<figure>
+<div class="shot crop" style="height:94mm"><img src="img/transparency.png" alt="Transparency page"></div>
+<figcaption><b>Figure 9. Transparency page.</b> Totals are rebuilt from chain events; the <i>Independent check</i> reads the vault's real token balance from the token contract (3,000 mUSDC) and confirms it matches the indexed total. Each activity row links to its transaction and block.</figcaption>
+</figure>
+
+<div class="two">
+<figure>
+<div class="shot crop" style="height:78mm"><img src="img/ngo-campaign.png" alt="NGO portal"></div>
+<figcaption><b>Figure 10. NGO portal: applicant selection.</b> Applicant details (fictional) are visible only to this campaign's NGO and verifiers. Selecting the person turns the ID into a private fingerprint in the browser and registers wallet + fingerprint on-chain.</figcaption>
+</figure>
+<figure>
+<div class="shot crop" style="height:78mm"><img src="img/verifier-review.png" alt="Verifier review queue"></div>
+<figcaption><b>Figure 11. Verifier portal: review queue.</b> People to approve, payments to review and approved-but-unpaid payments, each with a count. Approve and reject buttons need the verifier's MetaMask (the screenshot browser had none, so the site shows the wallet gate instead).</figcaption>
+</figure>
+</div>
+
+<h3>6.4 Evolution from the first prototype</h3>
+<p>The team's first prototype (kept unchanged in <code>legacy/</code>) had three contracts sharing an inherited base, 47 tests, first gas experiments and a security document. A design review against the specification found problems that shaped the final design:</p>
+<table>
+  <tr><th>First prototype</th><th>Problem</th><th>Final design</th></tr>
+  <tr><td>One shared ETH pool for all campaigns</td><td>Campaign A could spend campaign B's donations</td><td>Separate accounting per campaign (D5)</td></tr>
+  <tr><td>The first payout closed refunds for all donors</td><td>Unrelated donors lost their refund rights</td><td>Per-campaign, pro-rata refunds after closing (D6)</td></tr>
+  <tr><td>Vault paid whatever address the caller named</td><td>The vault trusted the workflow contract blindly</td><td>Vault re-checks eligibility, status, funds and duplicates (D3)</td></tr>
+  <tr><td>ETH donations</td><td>Volatile value; specification asked for a mock ERC-20</td><td>MockUSDC with <code>SafeERC20</code> (D7)</td></tr>
+  <tr><td>Roles and pause in each contract</td><td>NGO role granted three times; three pause switches</td><td>One <code>GiveChainAccess</code> (D2)</td></tr>
+  <tr><td>Approve and pay in one step, no receipt</td><td>Missing workflow steps</td><td>Submit → approve → release → confirm, plus reject and cancel</td></tr>
+  <tr><td>Gas savings of 78 and 163 gas (≈0.1%) on toy contracts</td><td>Weak evidence</td><td>26.1% per campaign, measured on the real contracts (section 7)</td></tr>
+  <tr><td>No frontend, backend or IPFS</td><td>Hybrid design and DApp components missing</td><td>Backend with IPFS, indexer, accounts; React + MetaMask frontend</td></tr>
+</table>
+
+<!-- ============================ 7 ============================ -->
+<h2>7. Gas measurement and optimization</h2>
+<h3>7.1 Methodology</h3>
+<table>
+  <tr><th style="width:24%">Item</th><th>Setting</th></tr>
+  <tr><td>Baseline</td><td><code>contracts/gas-baseline/Baseline*.sol</code>: exact copies of the clarity-first Phase 2 contracts, changed only by a name prefix</td></tr>
+  <tr><td>Optimized</td><td>The real contracts in <code>contracts/</code></td></tr>
+  <tr><td>Tool</td><td><code>scripts/gas-benchmark.js</code>, run with <code>npm run gas</code>; cross-checked with <code>hardhat-gas-reporter</code> (<code>npm run test:gas</code>)</td></tr>
+  <tr><td>Measurement</td><td><code>receipt.gasUsed</code> of each transaction (includes the 21,000 base cost and calldata)</td></tr>
+  <tr><td>Equal conditions</td><td>Both systems run the same 13-step workflow with the same accounts and inputs on the Hardhat in-process network; the chain is reverted to a snapshot between runs, so even contract addresses are identical. Same compiler and optimizer settings</td></tr>
+  <tr><td>Fairness check</td><td>Before any optimization the script reported identical gas for every action (12 gas difference at deployment, caused by the contract name)</td></tr>
+  <tr><td>Not counted</td><td>Custom errors: the baseline already uses them (the first prototype measured that saving separately)</td></tr>
+</table>
+
+<h3>7.2 Results</h3>
+<figure>
+<svg id="gaschart" viewBox="0 0 680 420" xmlns="http://www.w3.org/2000/svg"></svg>
+<figcaption><b>Figure 12. Gas: baseline vs optimized</b> for the 13 state-changing operations of one campaign life cycle (values from <code>docs/gas-results.json</code>, produced by <code>npm run gas</code>).</figcaption>
+</figure>
+<table>
+  <tr><th>Operation</th><th class="n">Baseline</th><th class="n">Optimized</th><th class="n">Saved</th><th class="n">Change</th></tr>
+  <tr><td>createCampaign</td><td class="n">197,858</td><td class="n">106,973</td><td class="n">90,885</td><td class="n good">−45.9%</td></tr>
+  <tr><td>registerBeneficiary</td><td class="n">109,414</td><td class="n">105,162</td><td class="n">4,252</td><td class="n">−3.9%</td></tr>
+  <tr><td>approveBeneficiary</td><td class="n">43,044</td><td class="n">40,783</td><td class="n">2,261</td><td class="n">−5.3%</td></tr>
+  <tr><td>donate (donor's first gift)</td><td class="n">123,102</td><td class="n">117,076</td><td class="n">6,026</td><td class="n">−4.9%</td></tr>
+  <tr><td>donate (repeat gift)</td><td class="n">71,802</td><td class="n">65,776</td><td class="n">6,026</td><td class="n">−8.4%</td></tr>
+  <tr><td>submitMilestone</td><td class="n">237,472</td><td class="n">140,203</td><td class="n">97,269</td><td class="n good">−41.0%</td></tr>
+  <tr><td>approveMilestone (reserves funds)</td><td class="n">216,583</td><td class="n">134,871</td><td class="n">81,712</td><td class="n good">−37.7%</td></tr>
+  <tr><td>releaseMilestone (pays beneficiary)</td><td class="n">148,499</td><td class="n">110,594</td><td class="n">37,905</td><td class="n good">−25.5%</td></tr>
+  <tr><td>confirmReceipt</td><td class="n">38,040</td><td class="n">33,903</td><td class="n">4,137</td><td class="n">−10.9%</td></tr>
+  <tr><td>rejectMilestone</td><td class="n">61,251</td><td class="n">41,911</td><td class="n">19,340</td><td class="n">−31.6%</td></tr>
+  <tr><td>cancelMilestone (frees funds)</td><td class="n">63,936</td><td class="n">60,607</td><td class="n">3,329</td><td class="n">−5.2%</td></tr>
+  <tr><td>completeCampaign</td><td class="n">41,923</td><td class="n">37,668</td><td class="n">4,255</td><td class="n">−10.1%</td></tr>
+  <tr><td>claimRefund</td><td class="n">110,511</td><td class="n">85,482</td><td class="n">25,029</td><td class="n">−22.6%</td></tr>
+  <tr class="total"><td>Total, one campaign life cycle (13 actions)</td><td class="n">1,463,435</td><td class="n">1,081,009</td><td class="n">382,426</td><td class="n">−26.1%</td></tr>
+  <tr><td>Deploy ProjectRegistry</td><td class="n">1,386,781</td><td class="n">1,272,321</td><td class="n">114,460</td><td class="n">−8.3%</td></tr>
+  <tr><td>Deploy DonationVault</td><td class="n">1,433,203</td><td class="n">1,659,791</td><td class="n">−226,588</td><td class="n bad">+15.8%</td></tr>
+  <tr><td>Deploy MilestoneDisbursement</td><td class="n">1,386,242</td><td class="n">1,321,908</td><td class="n">64,334</td><td class="n">−4.6%</td></tr>
+</table>
+
+<h3>7.3 Contribution of each optimization</h3>
+<p>The optimizations were applied one at a time and the benchmark was run after each step (cumulative columns).</p>
+<table>
+  <tr><th>Operation</th><th class="n">Baseline</th><th class="n">+ Opt 1 immutable</th><th class="n">+ Opt 2 packing</th><th class="n">+ Opt 3 CID hash</th></tr>
+  <tr><td>createCampaign</td><td class="n">197,858</td><td class="n">195,598</td><td class="n">151,754</td><td class="n">106,973</td></tr>
+  <tr><td>donate (first gift)</td><td class="n">123,102</td><td class="n">116,754</td><td class="n">117,076</td><td class="n">117,076</td></tr>
+  <tr><td>submitMilestone</td><td class="n">237,472</td><td class="n">232,912</td><td class="n">184,967</td><td class="n">140,203</td></tr>
+  <tr><td>approveMilestone</td><td class="n">216,583</td><td class="n">205,875</td><td class="n">134,871</td><td class="n">134,871</td></tr>
+  <tr><td>releaseMilestone</td><td class="n">148,499</td><td class="n">135,679</td><td class="n">110,594</td><td class="n">110,594</td></tr>
+  <tr><td>cancelMilestone</td><td class="n">63,936</td><td class="n">57,437</td><td class="n">60,607</td><td class="n">60,607</td></tr>
+  <tr><td>claimRefund</td><td class="n">110,511</td><td class="n">104,166</td><td class="n">85,482</td><td class="n">85,482</td></tr>
+  <tr><td>Deploy DonationVault</td><td class="n">1,433,203</td><td class="n">1,437,124</td><td class="n">1,659,791</td><td class="n">1,659,791</td></tr>
+</table>
+<p>The full table for all 16 rows is in <code>docs/GiveChain-Gas-Sheet.md</code> §3.</p>
+
+<h3>7.4 The optimizations and their justification</h3>
+<h4>Optimization 1: <code>immutable</code> contract addresses</h4>
+<p>The addresses of the access contract, token, registry and vault are fixed at deployment and became <code>immutable</code>. An immutable value is written into the bytecode, so reading it is a cheap code read instead of a cold storage read (<code>SLOAD</code>, 2,100 gas the first time in a transaction). Every protected function reads the access address at least twice (role and pause checks), and payouts cross three contracts. <b>Measured:</b> about 2,100–2,300 gas on simple actions, up to 12,820 on <code>releaseMilestone</code>. <b>Trade-off:</b> deployment 0.3–1.1% more expensive; addresses can never change, which matches D4 and is a security benefit.</p>
+<h4>Optimization 2: storage packing</h4>
+<p>Struct fields were reordered and narrowed so several share one 32-byte slot: <code>Campaign</code> (owner + status + <code>uint40</code> timestamp in one slot), <code>CampaignFunds</code> (4 slots → 2, with <code>reserved</code> and <code>released</code> together because a payout changes both), <code>Reservation</code> (4 → 2) and <code>Milestone</code> (6 → 3). Writing a new slot costs about 22,100 gas and a cold read 2,100, so fewer slots means fewer of both. Recording the approver now overwrites an already-used slot (≈2,900 gas) instead of filling an empty one (≈22,100), a large part of <code>approveMilestone</code>'s saving. Narrowed values use OpenZeppelin <code>SafeCast</code>, so an overflowing amount reverts instead of wrapping.</p>
+<h4>Optimization 3: CID hash in storage, full CID in the event</h4>
+<p>Campaign and evidence CIDs (≈59 characters, three storage slots ≈ 66,000 gas) were replaced by a one-slot <code>bytes32</code> <code>keccak256</code> hash; the full CID is published in the event, where data costs about 8 gas per byte. <b>Measured:</b> −44,781 on <code>createCampaign</code> and −44,764 on <code>submitMilestone</code> relative to step 2, and cheaper deployment of two contracts (no string handling). Integrity is unchanged: anyone can hash the CID from the event and compare it with storage (Figure 6, check B).</p>
+
+<h3>7.5 Trade-offs and rejected optimizations</h3>
+<table>
+  <tr><th>Trade-off (measured)</th><th>Why it was accepted</th></tr>
+  <tr><td>DonationVault deployment +15.8% (SafeCast checks and bit masking)</td><td>Paid once; every campaign after that is cheaper</td></tr>
+  <tr><td><code>donate</code> +322 gas versus step 1 (SafeCast overflow check)</td><td>Safety of narrowed amounts; still −4.9% overall</td></tr>
+  <tr><td><code>cancelMilestone</code> +3,170 versus step 1: <code>reserved</code> now shares a slot with <code>released</code>, so clearing it no longer earns the gas refund for zeroing a slot</td><td>Cancellation is rare; still −5.2% overall</td></tr>
+  <tr><td>CIDs must be read from events, not a view function</td><td>The indexer reads events anyway; no contract needs the CID</td></tr>
+  <tr><td>Struct order follows storage layout, not logic</td><td>Documented with slot comments in each struct</td></tr>
+</table>
+<table>
+  <tr><th>Rejected idea</th><th>Reason</th></tr>
+  <tr><td>Remove the vault's re-checks (≈5,000–10,000 gas per payout)</td><td>Would remove defence in depth (D3): security over gas</td></tr>
+  <tr><td>Combine the role and pause checks into one external call</td><td>Small saving for a less readable base contract</td></tr>
+  <tr><td>Emit-only campaigns with no storage</td><td>Vault and milestone contract must read status and owner on-chain</td></tr>
+</table>
+
+<!-- ============================ 8 ============================ -->
+<h2>8. Smart-contract security</h2>
+<h3>8.1 Threat model</h3>
+<div class="two">
+<div>
+<h4>Assets</h4>
+<table>
+  <tr><th>Asset</th><th>Why it matters</th></tr>
+  <tr><td>Tokens held by the vault</td><td>Donor money; the main target</td></tr>
+  <tr><td>Per-campaign accounting</td><td>If wrong, campaigns spend each other's money or refunds over-pay</td></tr>
+  <tr><td>Roles</td><td>Control approvals and the pause</td></tr>
+  <tr><td>Beneficiary and milestone status</td><td>Decide who and what can be paid, and only once</td></tr>
+  <tr><td>Vault → workflow link</td><td>The only path for payouts</td></tr>
+  <tr><td>Beneficiary privacy</td><td>Personal data must never reach the chain</td></tr>
+</table>
+</div>
+<div>
+<h4>Actors and attacker goals</h4>
+<table>
+  <tr><th>Actor</th><th>Possible goal</th></tr>
+  <tr><td>Dishonest NGO</td><td>Pay itself or a fake beneficiary; spend another campaign's money</td></tr>
+  <tr><td>Dishonest verifier</td><td>Approve own campaign or a payment to itself</td></tr>
+  <tr><td>Thief with the admin key</td><td>Redirect payouts, appoint accomplices</td></tr>
+  <tr><td>Donor</td><td>Refund twice or take others' money</td></tr>
+  <tr><td>Attacker contract / token</td><td>Re-enter the vault during a transfer</td></tr>
+  <tr><td>Outsider</td><td>Any unauthorized call; act while paused</td></tr>
+</table>
+</div>
+</div>
+<p>Trust boundaries are shown in Figure 7. The contracts treat every caller as untrusted except for the narrow powers of the admin, pauser and verifier.</p>
+
+<h3>8.2 Controls and why each is needed</h3>
+<table>
+  <tr><th style="width:26%">Control</th><th style="width:30%">Where</th><th>Why it is needed</th></tr>
+  <tr><td>Role-based access control (single source)</td><td><code>GiveChainAccess</code> + <code>onlyRole</code></td><td>Roles granted once and checked identically everywhere</td></tr>
+  <tr><td>Separation of duties</td><td><code>GiveChainAccess</code>, <code>approveMilestone</code>, <code>approveBeneficiary</code></td><td>Nobody can both request and approve, or approve themselves</td></tr>
+  <tr><td>Ownership checks</td><td>Registry, MilestoneDisbursement</td><td>An NGO acts only on its own campaigns</td></tr>
+  <tr><td>Explicit state machines</td><td>Campaign, beneficiary, milestone, reservation</td><td>Blocks duplicates, replays and out-of-order actions</td></tr>
+  <tr><td>Input validation</td><td>Zero amounts and addresses, empty CIDs and commitments</td><td>Rejects meaningless or malformed requests</td></tr>
+  <tr><td>Per-campaign accounting + reservations</td><td><code>DonationVault</code></td><td>A campaign can only promise its own available money</td></tr>
+  <tr><td>Independent re-validation</td><td><code>reserveFunds</code>, <code>releaseFunds</code></td><td>A workflow bug cannot misdirect money</td></tr>
+  <tr><td>One-time vault link</td><td><code>setDisbursementContract</code></td><td>A stolen admin key cannot redirect payouts</td></tr>
+  <tr><td>Checks-effects-interactions</td><td><code>donate</code>, <code>claimRefund</code>, <code>releaseFunds</code>, approve/release</td><td>State is final before any external call</td></tr>
+  <tr><td>Reentrancy guard</td><td><code>nonReentrant</code> on every function that moves tokens or calls the vault</td><td>A second, independent layer against re-entry</td></tr>
+  <tr><td>Safe external calls</td><td><code>SafeERC20</code>; calls only to known, fixed addresses</td><td>Handles tokens that return <code>false</code> instead of reverting</td></tr>
+  <tr><td>Global emergency pause</td><td><code>pause</code> + <code>whenNotPaused</code> on all 14 state-changing functions</td><td>One switch stops everything; reads keep working</td></tr>
+  <tr><td>Overflow-safe narrowing</td><td><code>SafeCast</code> on packed values</td><td>Packed <code>uint128</code>/<code>uint96</code>/<code>uint40</code> values revert instead of wrapping</td></tr>
+  <tr><td>Privacy by design</td><td>Identity commitment only</td><td>Detects duplicates without publishing who people are</td></tr>
+</table>
+
+<h3>8.3 Required negative scenarios (all tested)</h3>
+<table>
+  <tr><th style="width:5%">Id</th><th style="width:20%">Threat</th><th style="width:30%">Mitigation</th><th>Evidence in <code>test/Security.test.js</code></th></tr>
+  <tr><td>S1</td><td>Unauthorized release</td><td><code>onlyRole(NGO)</code> + ownership; vault accepts only its fixed caller</td><td>Strangers, other NGOs, auditors, admin and beneficiaries rejected; vault balance unchanged</td></tr>
+  <tr><td>S2</td><td>Reentrancy on refund</td><td><code>nonReentrant</code> + refund recorded before transfer</td><td>Attacker re-entry blocked; control test steals from a vulnerable vault (Figure 13)</td></tr>
+  <tr><td>S3</td><td>Duplicate beneficiary</td><td>Status per wallet + identity commitment per campaign</td><td>Same wallet rejected; same person under a new wallet rejected (<code>IdentityAlreadyUsed</code>)</td></tr>
+  <tr><td>S4</td><td>Repeated distribution</td><td>Milestone status + vault reservation status</td><td>Release called four times pays once; the vault alone also refuses a second payout</td></tr>
+  <tr><td>S5</td><td>Unauthorized approval</td><td><code>onlyRole(AUDITOR)</code>; approver ≠ campaign NGO or payee</td><td>NGO, admin, donor, beneficiary, stranger rejected; ex-NGO auditor cannot approve own campaign</td></tr>
+  <tr><td>S6</td><td>Missing or swapped evidence</td><td>Empty CID rejected; no function edits evidence</td><td>Submission without evidence fails; stored hash matches the event's CID</td></tr>
+  <tr><td>S7</td><td>Release without funds</td><td>Approval reserves; vault checks available balance</td><td>Over-sized approval fails; two approvals cannot exceed the balance</td></tr>
+  <tr><td>S8</td><td>Actions while paused</td><td><code>whenNotPaused</code> everywhere</td><td>All 14 functions revert with <code>SystemPaused</code>; reads work; only pausers can pause</td></tr>
+</table>
+
+<h3>8.4 Project-specific misuse scenarios</h3>
+<table>
+  <tr><th style="width:5%">Id</th><th style="width:22%">Misuse</th><th style="width:33%">Mitigation</th><th>Evidence</th></tr>
+  <tr><td>M1</td><td>NGO pays itself</td><td>Cannot register own wallet; every beneficiary needs a verifier; money goes only to the beneficiary</td><td>Own-wallet registration fails; unapproved sockpuppet cannot be paid; NGO balance stays 0</td></tr>
+  <tr><td>M2</td><td>One campaign drains another</td><td>Per-campaign accounting</td><td>A campaign with 0 donated cannot reserve 1 unit while the vault holds 1,000 for another</td></tr>
+  <tr><td>M3</td><td>Admin key stolen</td><td>Admin has no money powers; vault link permanent</td><td>Admin cannot release, approve or relink; cancelling only lets donors take back their money</td></tr>
+  <tr><td>M4</td><td>Refund abuse</td><td>Only when closed, once, pro-rata of unspent money</td><td>Refund while running, second claim and non-donor claim fail; paid-out money not refunded</td></tr>
+  <tr><td>M5</td><td>Conflicting roles</td><td>NGO + Auditor refused on one wallet</td><td>Both grant orders rejected</td></tr>
+</table>
+
+<h3>8.5 Reentrancy evidence with a control experiment</h3>
+<p>A test without a control can pass for the wrong reason. The reentrancy test therefore runs the same attacker twice: against GiveChain and against a deliberately vulnerable vault that transfers before updating state and has no guard.</p>
+<figure>
+<svg viewBox="0 0 680 200" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="m8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#33433e"/></marker></defs>
+  <rect x="6" y="8" width="320" height="186" rx="6" class="boxr"/>
+  <text x="18" y="28" class="t-h" style="fill:#a3271f">Control: VulnerableRefundVault</text>
+  <text x="18" y="50">1. attacker calls claimRefund (deposited 100)</text>
+  <text x="18" y="68">2. vault transfers 100 → token hook calls attacker</text>
+  <text x="18" y="86">3. attacker re-enters claimRefund</text>
+  <text x="18" y="104">4. refund not yet recorded → pays 100 again</text>
+  <rect x="18" y="118" width="296" height="62" rx="4" fill="#fff" stroke="#a3271f"/>
+  <text x="166" y="142" text-anchor="middle" class="t-b" style="fill:#a3271f;font-size:14px">attacker ends with 200</text>
+  <text x="166" y="162" text-anchor="middle" class="t-s">100 stolen from an honest donor: the attack is real</text>
+  <rect x="354" y="8" width="320" height="186" rx="6" class="boxg"/>
+  <text x="366" y="28" class="t-h">GiveChain DonationVault</text>
+  <text x="366" y="50">1. attacker calls claimRefund (deposited 100)</text>
+  <text x="366" y="68">2. refund recorded first (checks-effects-interactions)</text>
+  <text x="366" y="86">3. transfer → hook → attacker re-enters</text>
+  <text x="366" y="104">4. nonReentrant reverts the re-entry</text>
+  <rect x="366" y="118" width="296" height="62" rx="4" fill="#fff" stroke="#0f6b54"/>
+  <text x="514" y="142" text-anchor="middle" class="t-b" style="fill:#0f6b54;font-size:14px">attacker ends with 100</text>
+  <text x="514" y="162" text-anchor="middle" class="t-s">ReentrancyGuardReentrantCall; only its own money</text>
+</svg>
+<figcaption><b>Figure 13. Reentrancy attack against the control vault and GiveChain.</b> Contracts: <code>contracts/mocks/HookToken.sol</code>, <code>RefundReentrancyAttacker.sol</code>, <code>VulnerableRefundVault.sol</code>; test: S2 in <code>test/Security.test.js</code>.</figcaption>
+</figure>
+
+<h3>8.6 Off-chain security</h3>
+<table>
+  <tr><th style="width:28%">Threat</th><th style="width:40%">Mitigation</th><th>Evidence (<code>backend/test</code>)</th></tr>
+  <tr><td>Stolen password database</td><td>scrypt with random salt; passwords never returned</td><td>"stores only a scrypt hash of the password"</td></tr>
+  <tr><td>Password guessing</td><td>10 failures per email or IP per 15 min → HTTP 429; same message for unknown email and wrong password</td><td>"blocks repeated wrong passwords"</td></tr>
+  <tr><td>Session theft</td><td>Random token in <code>HttpOnly</code>, <code>SameSite=Lax</code> cookie; only its hash stored; password change ends other sessions</td><td>"logs in with an HttpOnly cookie"</td></tr>
+  <tr><td>Linking someone else's wallet</td><td>One-time challenge signed in MetaMask, checked with <code>verifyMessage</code>; one wallet per account</td><td>"links a wallet only with a valid signature"</td></tr>
+  <tr><td>Self-promotion through the database</td><td>Approval and admin pages require the on-chain role</td><td>"becomes approved only when the role is on-chain"</td></tr>
+  <tr><td>Leaking beneficiary data</td><td>Applications visible only to the campaign's NGO and verifiers</td><td>"keeps applicant details private"</td></tr>
+  <tr><td>Tampered or spoofed IPFS content</td><td>Every read re-hashed against the CID, also for gateway content; uploads need a login</td><td>"rejects gateway content that does not match the CID"</td></tr>
+</table>
+
+<!-- ============================ 9 ============================ -->
+<h2>9. Testing and results</h2>
+<p>All automated tests pass: <b>238</b> Hardhat tests (<code>npm test</code>) and <b>34</b> backend tests (<code>npm run backend:test</code>), <b>272 in total</b>, re-run on 26 November 2026 for this report.</p>
+<table>
+  <tr><th>Suite</th><th class="n">Tests</th><th>What it covers</th></tr>
+  <tr><td><code>GiveChainAccess</code></td><td class="n">16</td><td>Roles, separation of duties, pause</td></tr>
+  <tr><td><code>AccessControlBase</code></td><td class="n">12</td><td>Modifiers through a test harness</td></tr>
+  <tr><td><code>MockUSDC</code></td><td class="n">9</td><td>Faucet limits, ERC-20 behaviour</td></tr>
+  <tr><td><code>ProjectRegistry</code></td><td class="n">52</td><td>Campaign and beneficiary life cycles, duplicates, permissions</td></tr>
+  <tr><td><code>DonationVault</code></td><td class="n">54</td><td>Per-campaign isolation, reservations, payouts, refunds and rounding, accounting invariant</td></tr>
+  <tr><td><code>MilestoneDisbursement</code></td><td class="n">44</td><td>Full milestone life cycle, permissions, separation of duties</td></tr>
+  <tr><td>End-to-end</td><td class="n">1</td><td>Deploy → campaign → donations → payments → refunds; the books balance to zero</td></tr>
+  <tr><td>Security scenarios</td><td class="n">32</td><td>S1–S8, M1–M5, reentrancy with control</td></tr>
+  <tr><td>Backend indexer + API</td><td class="n">18</td><td>Index equals on-chain state, rebuild, REST endpoints, uploads</td></tr>
+  <tr><td>Backend IPFS</td><td class="n">16</td><td>CID correctness, tamper detection, limits, path tricks, gateway verification</td></tr>
+  <tr><td>Backend accounts</td><td class="n">18</td><td>Hashing, sessions, rate limiting, wallet-link signatures, on-chain role checks, privacy</td></tr>
+  <tr class="total"><td>Total</td><td class="n">272</td><td>All passing</td></tr>
+</table>
+<h3>Normal, boundary and failure cases</h3>
+<ul>
+  <li><b>Normal:</b> every workflow end to end, including multiple payments to one beneficiary and refunds after partial payouts.</li>
+  <li><b>Boundary:</b> exactly the faucet limit vs one unit more; reserving exactly the available balance vs one unit more; refunds that round down to zero; the last donor's refund leaving only rounding dust.</li>
+  <li><b>Failure:</b> every unauthorized caller for every protected function, wrong-state calls (for example releasing a rejected payment), zero values and empty CIDs, and all 14 functions while paused, each checked for its exact custom error.</li>
+</ul>
+
+<h3>System test in the browser with MetaMask</h3>
+<p>The complete story was clicked through on a live local chain with MetaMask: the admin granting a role, the NGO selecting an applicant, a verifier approving the person and a payment, a donor using the faucet and donating, the NGO releasing payments, and the beneficiary confirming receipt. In an earlier browser test, a deliberate duplicate registration of the same ID under another wallet failed with its decoded reason (<code>IdentityAlreadyUsed</code>). On Ganache, deployment, seeding, backend indexing, a demo login linked to a Ganache account and a donation through the website were tested. Every action appears in the node log as a transaction from the acting person's own wallet; the hashes match the ones the website shows (Figure 14 and Figure 8 show the same four payment hashes).</p>
+
+<figure>
+<div class="term"><span class="m">$ npm run node     # Hardhat Network, chain 31337 (excerpt after npm run seed:local)</span>
+
+  <span class="c">Contract call:</span>       MilestoneDisbursement#submitMilestone
+  Transaction:         0x50628bc4fac00e74197b9a116afab9bbd0eadbf938c70d27d591b2239d8190ec
+  From:                0x70997970c51812dc3a010c7d01b50e0d17dc79c8   <span class="y">(NGO)</span>
+  Block #23
+
+  <span class="c">Contract call:</span>       MilestoneDisbursement#approveMilestone
+  Transaction:         0x76fb4174f4c7c0b46934c746f8756941d87fad9363171acc410a66665ada8e06
+  From:                0x90f79bf6eb2c4f870365e785982e1f101e93b906   <span class="y">(Verifier)</span>
+  Block #24
+
+  <span class="c">Contract call:</span>       MilestoneDisbursement#releaseMilestone
+  Transaction:         0x0a9af6b83dca39151c6b187b087febf045b89cba911bac1442c377a2eaf737ca
+  From:                0x70997970c51812dc3a010c7d01b50e0d17dc79c8   <span class="y">(NGO)</span>
+  Block #25
+
+  <span class="c">Contract call:</span>       MilestoneDisbursement#confirmReceipt
+  Transaction:         0x3b855a56c20631d069af1a637d911bbbb3ddae4711b072a919c43fa01bd12623
+  From:                0x976ea74026e726554db657fa54763abd0c3a0aa9   <span class="y">(Beneficiary)</span>
+  Block #26</div>
+<figcaption><b>Figure 14. Chain log of one payment (Hardhat node).</b> Four transactions, four blocks, three different signers. The hashes are the ones shown in Payment #1's history on the campaign page (Figure 8).</figcaption>
+</figure>
+
+<figure>
+<div class="term"><span class="m">$ npm run inspect -- 0x976EA74026E726554dB657fA54763abd0C3a0aa9</span>
+
+Chain 31337 at http://127.0.0.1:8545, block 35. Reading directly from the contracts.
+
+Wallet 0x976EA74026E726554dB657fA54763abd0C3a0aa9
+  mUSDC balance:      <span class="y">300 mUSDC</span>
+  On-chain roles:     none
+
+  Campaign #1 (Active)
+    Beneficiary status: Approved
+
+  Payment #1 to this wallet: 300 mUSDC, campaign #1, status <span class="c">Confirmed</span></div>
+<figcaption><b>Figure 15. Reading a wallet straight from the contracts.</b> <code>scripts/inspect.js</code> uses only the contracts (no backend, no website), so it independently confirms what the website shows: the beneficiary holds the 300 mUSDC paid in Figure 14.</figcaption>
+</figure>
+
+<!-- ============================ 10 ============================ -->
+<h2>10. Deployment and reproducibility</h2>
+<table>
+  <tr><th style="width:30%">Item</th><th>Detail</th></tr>
+  <tr><td>Local chains</td><td>Hardhat Network (<code>npm run node</code>, port 8545, chain 31337) and Ganache (port 7545, chain 1337) with <code>:ganache</code> variants of every command</td></tr>
+  <tr><td>Public testnet</td><td>Sepolia network entry in <code>hardhat.config.js</code>, reading the RPC URL and deployer key from <code>.env</code> (not committed); not deployed for this submission</td></tr>
+  <tr><td>Deployment</td><td><code>npm run deploy:local</code> deploys, links and grants roles and writes <code>deployments/localhost.json</code> (addresses, ABIs, start block)</td></tr>
+  <tr><td>Demo data</td><td><code>npm run seed:local</code> creates three campaigns in different states with real IPFS CIDs, donations and payments in every status</td></tr>
+  <tr><td>Configuration</td><td>Local runs need no <code>.env</code>; <code>.env.example</code> documents the optional settings</td></tr>
+  <tr><td>Secrets</td><td>No private keys or seed phrases in the repository; <code>.env</code> is git-ignored. The only keys used are Hardhat's and Ganache's publicly known test accounts</td></tr>
+  <tr><td>Fresh-clone check</td><td>In Phase 8, a fresh clone from GitHub installed, passed all tests, built the frontend and ran the gas benchmark using only the README commands</td></tr>
+</table>
+<p>The complete run instructions are in Appendix B and in <code>README.md</code> and <code>docs/DEMO.md</code>.</p>
+
+<!-- ============================ 11 ============================ -->
+<h2 class="nobreak">11. Limitations and future work</h2>
+<table>
+  <tr><th style="width:30%">Limitation</th><th style="width:40%">Effect</th><th>Possible future work</th></tr>
+  <tr><td>The verifier is a human judgement (oracle problem)</td><td>The chain proves what was approved and paid, not that aid was delivered or who owns a key</td><td>Several verifiers with an M-of-N threshold; field confirmations</td></tr>
+  <tr><td>Collusion between an NGO and a verifier</td><td>Made public and permanent, but not prevented</td><td>Random assignment of verifiers; reputation and stake</td></tr>
+  <tr><td>A single admin key appoints roles</td><td>A stolen key could appoint a fake NGO and verifier (who still cannot touch other campaigns' money)</td><td>Multisig admin and a timelock on role changes</td></tr>
+  <tr><td>Pausing also blocks refunds</td><td>Donors wait during an emergency</td><td>Allow refunds from closed campaigns while paused</td></tr>
+  <tr><td>Closing a campaign voids approved but unpaid payments</td><td>Their money becomes refundable; the UI warns the NGO</td><td>Grace period for releases</td></tr>
+  <tr><td>Rounding in pro-rata refunds</td><td>A few millionths of a dollar remain in the vault</td><td>Sweep of dust to the last claimant</td></tr>
+  <tr><td>Standard ERC-20 tokens only</td><td>Fee-on-transfer or rebasing tokens would break accounting</td><td>Balance-difference accounting or a token allow-list</td></tr>
+  <tr><td>Contracts are not upgradeable</td><td>A bug fix means redeploying</td><td>Proxy pattern with a timelocked upgrade</td></tr>
+  <tr><td>Duplicate detection is per campaign and per NGO key</td><td>The same person can receive help from several campaigns or NGOs (allowed by design, but not limited)</td><td>A shared, privacy-preserving identity registry with cross-campaign limits</td></tr>
+  <tr><td>Accounts are prototype level</td><td>No email verification, password reset by email or two-factor login; applicant data not encrypted at rest; JSON file instead of a database</td><td>Proper database, encryption, verification flows</td></tr>
+  <tr><td>Index kept in memory</td><td>Start-up time grows with chain length</td><td>Persistent index with checkpoints</td></tr>
+  <tr><td>IPFS availability</td><td>Files persist only while pinned; Pinata mode implemented but not tested against the live service</td><td>Pinning service with redundancy</td></tr>
+  <tr><td>Evidence of security is from tests</td><td>Static analysis (for example Slither) and an external audit were not done</td><td>Run Slither and fuzzing (Foundry/Echidna) on the invariants</td></tr>
+  <tr><td>Local chains only</td><td>Not deployed to a public testnet</td><td>Deploy to Sepolia with a funded test wallet</td></tr>
+</table>
+
+<!-- ============================ 12 ============================ -->
+<h2 class="nobreak">12. Reused code, tools and AI assistance</h2>
+<h3>Reused code (with attribution)</h3>
+<ul>
+  <li><b>OpenZeppelin Contracts v5</b> (MIT licence): <code>AccessControl</code>, <code>Pausable</code>, <code>ReentrancyGuard</code>, <code>ERC20</code>, <code>SafeERC20</code>, <code>SafeCast</code>. Used unchanged through inheritance and library calls.</li>
+  <li><b>Libraries and tools:</b> Hardhat and hardhat-toolbox (Mocha, Chai, hardhat-gas-reporter), ethers.js v6, Express, multer, multiformats (CID encoding), React, React Router, Vite, MetaMask, Ganache.</li>
+</ul>
+<h3>Original project work</h3>
+<p>Everything else in <code>contracts/</code> (the five GiveChain contracts, the abstract base, the interfaces and the test-only mocks such as the reentrancy attacker and the vulnerable control vault), all tests, the deploy, seed, gas-benchmark and inspect scripts, the backend (IPFS store, indexer, API, accounts) and the frontend were written for this project. So were the problem framing, use case, business rules (<code>docs/PLAN.md</code>) and architecture (<code>docs/ARCHITECTURE.md</code>).</p>
+<h3>AI assistance</h3>
+<p>From Phase 0 onward (commits <code>286e5f0</code> to <code>03c469b</code>), much of the code and documentation was produced with an AI coding assistant (Claude Code), directed, reviewed, run and tested by the team member who committed it. These commits carry a <code>Co-Authored-By</code> line that says so. The first prototype (commits by Maryam, now in <code>legacy/</code>) predates this. Each team member is responsible for understanding and explaining the parts credited to them in section 13.</p>
+
+<!-- ============================ 13 ============================ -->
+<h2>13. Work distribution</h2>
+<p>The matrix below is based on the git history of the repository. Commit hashes identify each member's work.</p>
+<table>
+  <tr><th style="width:14%">Member</th><th style="width:34%">Owned work / packages</th><th style="width:24%">Evidence (commits / tests / demo)</th><th>Effort and justification</th></tr>
+  <tr><td><b>Maryam</b><br><span class="mono">maryam957</span></td><td>Project start: Hardhat environment and accounts. First prototype: registry, ETH donation vault and milestone contracts sharing an inherited access-control base; reentrancy attacker and reverting-beneficiary test contracts; first test suite (47 tests); first gas experiments (custom errors vs <code>require</code>, milestone storage layout); first security and deployment documents</td><td><code>e065c02</code> (16 Nov), <code>6dcd192</code>, <code>14ab144</code> (23 Nov); <code>legacy/</code></td><td>Established the use case, the three-contract split with inheritance and the first security and gas evidence. The design review in section 6.4 started from this prototype, and its contract split and test approach carried into the final system</td></tr>
+  <tr><td><b>Waleed</b><br><span class="mono">waleedahmadzai</span></td><td>Design review and redesign (Phases 0–9): architecture and interfaces; rebuilt contracts (access, registry, vault, milestones); security scenarios and package; gas optimizations and benchmark; deploy, seed and inspect scripts; backend (IPFS, indexer, API, accounts); React frontend and role portals; Ganache support; report</td><td><code>286e5f0</code> → <code>03c469b</code> (24–25 Nov), 15 commits; 272 tests; browser and MetaMask system test</td><td>Carried out the redesign and integration in phases, each finished with passing tests before the next; the components depend on each other (contracts → deployment → backend → frontend), which is why they were built in one sequence</td></tr>
+</table>
+<h3>Shared work and demo</h3>
+<table>
+  <tr><th>Task</th><th>Maryam</th><th>Waleed</th></tr>
+  <tr><td>Use case and business rules</td><td>Initial use case and prototype rules</td><td>Rules table R1–R12 (<code>docs/PLAN.md</code>)</td></tr>
+  <tr><td>Contracts and inheritance</td><td>Prototype contracts and inherited base</td><td>Final contracts and <code>AccessControlBase</code></td></tr>
+  <tr><td>Security</td><td>Prototype reentrancy test and security document</td><td>S1–S8, M1–M5, control experiment, security package</td></tr>
+  <tr><td>Gas</td><td>First gas experiments</td><td>Baseline copy, three optimizations, benchmark</td></tr>
+  <tr><td>Off-chain and frontend</td><td>–</td><td>Backend, IPFS, accounts, React frontend</td></tr>
+  <tr><td>Live demo</td><td colspan="2" style="text-align:center">Each member presents and answers questions on their own work above</td></tr>
+</table>
+
+<!-- ============================ APPENDIX ============================ -->
+<h2>Appendix A. Rubric evidence map</h2>
+<table>
+  <tr><th style="width:26%">Criterion (marks)</th><th>Where the evidence is</th></tr>
+  <tr><td>Use case and blockchain justification (10)</td><td>Sections 1–3; Figure 1</td></tr>
+  <tr><td>Architectural complexity and workflows (15)</td><td>Section 3 (5 roles, 6 workflows, permission matrix); 4.4 state machines (Figure 5); 4.5 reservation accounting; section 5 decisions</td></tr>
+  <tr><td>Multiple contracts and inheritance (10)</td><td>4.2 (Figure 3): 5 contracts + abstract base + 3 interfaces; 4.3 interaction sequence (Figure 4)</td></tr>
+  <tr><td>On-chain/off-chain integration (10)</td><td>4.1 components (Figure 2); 4.6 data map; 4.7 integrity and failure handling (Figure 6); 6.2 backend; Figures 8–9</td></tr>
+  <tr><td>Gas measurement and optimization (10)</td><td>Section 7: 13 operations, 3 optimizations, identical conditions, per-step contribution, trade-offs (Figure 12); <code>npm run gas</code></td></tr>
+  <tr><td>Smart-contract security (15)</td><td>Section 8: threat model, 14 controls, S1–S8, M1–M5, reentrancy control experiment (Figure 13), off-chain threats; <code>test/Security.test.js</code></td></tr>
+  <tr><td>Frontend and system integration (10)</td><td>6.3; Figures 8–11; MetaMask system test in section 9</td></tr>
+  <tr><td>Testing, deployment and demo (5)</td><td>Sections 9–10; Figures 14–15; Appendix B; <code>docs/DEMO.md</code></td></tr>
+  <tr><td>Report and technical evidence (5)</td><td>This report: architecture (section 4), 15 figures, decisions (section 5), gas and security evidence (sections 7–8), limitations (section 11)</td></tr>
+  <tr><td>Work distribution and individual defense (10)</td><td>Section 13; <code>docs/CONTRIBUTIONS.md</code>; git history</td></tr>
+</table>
+<h3>Repository documents</h3>
+<table>
+  <tr><th>Deliverable</th><th>File</th></tr>
+  <tr><td>Architecture package</td><td><code>docs/ARCHITECTURE.md</code> (component, inheritance, state, trust-boundary diagrams; data map)</td></tr>
+  <tr><td>Gas-evaluation sheet</td><td><code>docs/GiveChain-Gas-Sheet.md</code>, <code>docs/gas-results.md</code> / <code>.json</code> (generated)</td></tr>
+  <tr><td>Security package</td><td><code>docs/GiveChain-Security-Package.md</code></td></tr>
+  <tr><td>Demo guide</td><td><code>docs/DEMO.md</code> (demo logins, MetaMask setup, demo script with a live security failure)</td></tr>
+  <tr><td>Contribution matrix</td><td><code>docs/CONTRIBUTIONS.md</code></td></tr>
+</table>
+
+<h2>Appendix B. Running the demonstration</h2>
+<p>Requires Node.js 18 or newer. In the project folder:</p>
+<div class="term">npm install
+npm run backend:install
+npm run frontend:install
+npm test                  <span class="m"># 238 contract, security and indexer tests</span>
+npm run backend:test      <span class="m"># 34 IPFS and account tests</span>
+npm run gas               <span class="m"># baseline vs optimized gas table</span>
+
+<span class="m"># four terminals:</span>
+npm run node              <span class="m"># 1. local chain (keep running)</span>
+npm run deploy:local      <span class="m"># 2. deploy contracts ...</span>
+npm run seed:local        <span class="m">#    ... and add demo data</span>
+npm run backend           <span class="m"># 3. API at http://localhost:4000 (keep running)</span>
+npm run frontend          <span class="m"># 4. website at http://localhost:5173 (keep running)</span>
+
+npm run inspect -- 0xWALLET   <span class="m"># read any wallet straight from the contracts</span></div>
+<p>Demo logins, MetaMask network settings (RPC <code>http://127.0.0.1:8545</code>, chain ID 31337) and the step-by-step demo script are in <code>docs/DEMO.md</code>. For Ganache, use the <code>:ganache</code> variants of the commands (RPC port 7545, chain ID 1337).</p>
+
+<script>
+(function () {
+  var data = [
+    ["createCampaign",197858,106973],["registerBeneficiary",109414,105162],["approveBeneficiary",43044,40783],
+    ["donate (first gift)",123102,117076],["donate (repeat)",71802,65776],["submitMilestone",237472,140203],
+    ["approveMilestone",216583,134871],["releaseMilestone",148499,110594],["confirmReceipt",38040,33903],
+    ["rejectMilestone",61251,41911],["cancelMilestone",63936,60607],["completeCampaign",41923,37668],["claimRefund",110511,85482]
+  ];
+  var svg = document.getElementById("gaschart"), NS = "http://www.w3.org/2000/svg";
+  function el(n, a, t) { var e = document.createElementNS(NS, n); for (var k in a) e.setAttribute(k, a[k]); if (t != null) e.textContent = t; svg.appendChild(e); return e; }
+  var left = 128, right = 610, top = 30, row = 28, max = 250000, w = right - left;
+  el("rect", { x: left, y: 6, width: 12, height: 10, fill: "#b9c4c0" }); el("text", { x: left + 16, y: 15, "class": "t-s" }, "baseline");
+  el("rect", { x: left + 80, y: 6, width: 12, height: 10, fill: "#0f6b54" }); el("text", { x: left + 96, y: 15, "class": "t-s" }, "optimized");
+  el("text", { x: right + 4, y: 15, "class": "t-s" }, "change");
+  for (var g = 0; g <= max; g += 50000) {
+    var gx = left + w * g / max;
+    el("line", { x1: gx, y1: top - 4, x2: gx, y2: top + row * data.length, stroke: "#e4ebe8" });
+    el("text", { x: gx, y: top + row * data.length + 14, "text-anchor": "middle", "class": "t-s" }, g === 0 ? "0" : (g / 1000) + "k");
+  }
+  data.forEach(function (d, i) {
+    var y = top + i * row;
+    el("text", { x: left - 6, y: y + 16, "text-anchor": "end" }, d[0]);
+    el("rect", { x: left, y: y + 3, width: w * d[1] / max, height: 10, fill: "#b9c4c0" });
+    el("rect", { x: left, y: y + 14, width: w * d[2] / max, height: 10, fill: "#0f6b54" });
+    var pct = Math.abs((d[2] - d[1]) / d[1] * 100).toFixed(1);
+    el("text", { x: right + 4, y: y + 18, "class": "t-b", fill: Math.abs(pct) >= 20 ? "#0f6b54" : "#33433e" }, "−" + pct + "%");
+  });
+  el("text", { x: left, y: top + row * data.length + 34, "class": "t-s" }, "gas used per transaction (receipt.gasUsed)   ·   whole life cycle: 1,463,435 → 1,081,009 gas (−26.1%)");
+  svg.setAttribute("viewBox", "0 0 680 " + (top + row * data.length + 44));
+})();
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 A blockchain-based NGO donation platform. Donations sit in a smart-contract vault, and money only leaves it when an independent auditor has approved the payment. Every donation, approval and payout can be checked on-chain.
 
-> **Documents:** [Report](docs/REPORT.md) · [Architecture](docs/ARCHITECTURE.md) · [Security package](docs/GiveChain-Security-Package.md) · [Gas sheet](docs/GiveChain-Gas-Sheet.md) · [Demo guide](docs/DEMO.md) · [Rubric checklist](docs/RUBRIC-CHECKLIST.md) · [Contributions](docs/CONTRIBUTIONS.md) · [Plan](docs/PLAN.md)
+> **Documents:** [Report (PDF)](docs/report/GiveChain-Report.pdf) · [Report draft](docs/REPORT.md) · [Architecture](docs/ARCHITECTURE.md) · [Security package](docs/GiveChain-Security-Package.md) · [Gas sheet](docs/GiveChain-Gas-Sheet.md) · [Demo guide](docs/DEMO.md) · [Rubric checklist](docs/RUBRIC-CHECKLIST.md) · [Contributions](docs/CONTRIBUTIONS.md) · [Plan](docs/PLAN.md)
 
 ## Project layout
 
