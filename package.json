@@ -1,19 +1,41 @@
 {
   "name": "givechain",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "GiveChain: blockchain-based NGO donation transparency and beneficiary assistance platform",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:gas": "cross-env REPORT_GAS=true hardhat test",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "seed:local": "hardhat run scripts/seed.js --network localhost",
+    "clean": "hardhat clean",
+    "gas": "hardhat run scripts/gas-benchmark.js",
+    "backend": "npm --prefix backend start",
+    "backend:install": "npm --prefix backend install",
+    "backend:test": "npm --prefix backend test",
+    "frontend": "npm --prefix frontend run dev",
+    "frontend:install": "npm --prefix frontend install",
+    "frontend:build": "npm --prefix frontend run build",
+    "inspect": "node scripts/inspect.js",
+    "deploy:ganache": "hardhat run scripts/deploy.js --network ganache",
+    "seed:ganache": "hardhat run scripts/seed.js --network ganache",
+    "backend:ganache": "cross-env GIVECHAIN_NETWORK=ganache RPC_URL=http://127.0.0.1:7545 npm --prefix backend start",
+    "frontend:ganache": "cross-env GIVECHAIN_RPC_URL=http://127.0.0.1:7545 npm --prefix frontend run dev",
+    "inspect:ganache": "cross-env GIVECHAIN_NETWORK=ganache RPC_URL=http://127.0.0.1:7545 node scripts/inspect.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "cross-env": "^7.0.3",
+    "dotenv": "^16.6.1",
     "hardhat": "^2.29.2"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^5.6.1"
-  }
+    "@openzeppelin/contracts": "^5.6.1",
+    "multiformats": "^13.4.2"
+  },
+  "private": true
 }

@@ -1,0 +1,132 @@
+// GiveChain backend entry point.
+//
+//   npm run backend          (from the project root)
+//
+// 1. Loads deployments/<network>.json (waits for it if the contracts are not deployed yet).
+// 2. Imports the demo files in seed-data/ into the local IPFS store.
+// 3. Indexes all contract events from the deployment block, then keeps polling.
+// 4. Serves the REST API on http://localhost:4000.
+// If the deployment file changes (redeploy), the index is rebuilt automatically.
+
+const fs = require("fs");
+const path = require("path");
+const { ethers } = require("ethers");
+const config = require("./config");
+const { Store } = require("./indexer/store");
+const { Indexer } = require("./indexer/indexer");
+const { IpfsService } = require("./ipfs/ipfsService");
+const { createApp } = require("./api/app");
+const { JsonDb } = require("./accounts/jsonDb");
+const { AccountsService } = require("./accounts/accountsService");
+
+// Local development chains: Hardhat (31337) and Ganache (1337).
+const LOCAL_CHAIN_IDS = [31337, 1337];
+const DEMO_USERS_FILE = path.join(__dirname, "..", "demo-users.json");
+
+const log = (message) => console.log(`[${new Date().toISOString().slice(11, 19)}] ${message}`);
+
+function readDeployment() {
+    try {
+        const stat = fs.statSync(config.deploymentFile);
+        return { data: JSON.parse(fs.readFileSync(config.deploymentFile, "utf8")), mtimeMs: stat.mtimeMs };
+    } catch {
+        return null;
+    }
+}
+
+async function main() {
+    const store = new Store();
+    const ipfs = new IpfsService(config.ipfs);
+    const provider = new ethers.JsonRpcProvider(config.rpcUrl, undefined, { staticNetwork: true });
+
+    const imported = await ipfs.importDirectory(config.seedDataDir);
+    log(`IPFS mode: ${ipfs.mode}. Imported ${imported.length} demo files into the local store.`);
+
+    const db = new JsonDb(config.accountsDbFile);
+    const accounts = new AccountsService({ db, store });
+    let demoUsersChecked = false;
+    /**
+     * On a local chain, create the demo logins and link each one to the node's own
+     * unlocked account with the same number (account #0, #1, ...), so they match the
+     * wallets used by the deploy and seed scripts on Hardhat and on Ganache alike.
+     */
+    async function importDemoUsersIfLocal(chainId) {
+        if (demoUsersChecked || !LOCAL_CHAIN_IDS.includes(Number(chainId)) || !fs.existsSync(DEMO_USERS_FILE)) return;
+        demoUsersChecked = true;
+        const demo = JSON.parse(fs.readFileSync(DEMO_USERS_FILE, "utf8"));
+        let nodeAccounts = [];
+        try {
+            nodeAccounts = await provider.send("eth_accounts", []);
+        } catch {
+            log("Could not read the node's accounts; demo users will have no wallet linked.");
+        }
+        const users = demo.users.map((u) => ({
+            ...u,
+            password: demo.password,
+            wallet: nodeAccounts[u.accountIndex] || null,
+        }));
+        const created = accounts.importDemoUsers(users);
+        const unlinked = users.filter((u) => !u.wallet).map((u) => u.email);
+        if (created) log(`Created ${created} local demo accounts (see docs/DEMO.md for logins).`);
+        if (created && unlinked.length) {
+            log(`The node has only ${nodeAccounts.length} accounts; these demo users have no wallet yet: ${unlinked.join(", ")}`);
+        }
+    }
+
+    let deployment = null;
+    let deploymentMtime = 0;
+    let indexer = null;
+    let lastError = null;
+
+    async function tick() {
+        const current = readDeployment();
+        if (!current) {
+            if (deployment) log("Deployment file disappeared; waiting for a new deployment.");
+            deployment = null;
+            return;
+        }
+        if (!deployment || current.mtimeMs !== deploymentMtime) {
+            deployment = current.data;
+            deploymentMtime = current.mtimeMs;
+            if (indexer) indexer.setDeployment(deployment);
+            else indexer = new Indexer({ provider, deployment, store, log });
+            log(`Loaded deployment for "${deployment.network}" (chain ${deployment.chainId}). Indexing from block ${deployment.startBlock}.`);
+            await importDemoUsersIfLocal(deployment.chainId);
+        }
+        try {
+            await indexer.sync();
+            lastError = null;
+        } catch (err) {
+            if (lastError !== err.message) log(`Cannot reach the blockchain at ${config.rpcUrl}: ${err.shortMessage || err.message}`);
+            lastError = err.message;
+        }
+    }
+
+    await tick();
+    setInterval(() => tick().catch((err) => log(`Error: ${err.message}`)), config.pollIntervalMs);
+
+    const app = createApp({
+        store,
+        ipfs,
+        getDeployment: () => deployment,
+        getStatus: () => ({
+            rpcUrl: config.rpcUrl,
+            deploymentFile: path.relative(config.ROOT, config.deploymentFile),
+            chainError: lastError,
+        }),
+        corsOrigin: config.corsOrigin,
+        accounts,
+        publicRpcUrl: config.rpcUrl,
+        cookieName: `gc_session_${config.network}`,
+        secureCookies: process.env.NODE_ENV === "production",
+    });
+    app.listen(config.port, () => {
+        log(`GiveChain backend listening on http://localhost:${config.port}`);
+        if (!deployment) log("No deployment yet. Run: npm run node, then npm run deploy:local");
+    });
+}
+
+main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+});

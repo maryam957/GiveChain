@@ -1,0 +1,118 @@
+{
+  "_comment": "LOCAL DEMO ONLY. Test logins for a local chain (Hardhat 31337 or Ganache 1337). accountIndex N links the login to the node's own account #N (Hardhat: the accounts printed by `npm run node`; Ganache: the Nth account in the Ganache window, counting from 0). Import that account's private key into MetaMask to act as this user. The backend imports these only on a local chain. Never use these passwords anywhere real.",
+  "password": "GiveChainDemo1",
+  "users": [
+    {
+      "email": "admin@givechain.test",
+      "name": "GiveChain Admin",
+      "accountType": "admin",
+      "accountIndex": 0
+    },
+    {
+      "email": "ngo1@givechain.test",
+      "name": "Sara Malik",
+      "accountType": "ngo",
+      "accountIndex": 1,
+      "organisation": {
+        "organisationName": "Demo Relief Foundation",
+        "registrationNumber": "DEMO-NGO-0001",
+        "country": "Demo Country",
+        "website": "https://relief.example",
+        "description": "Fictional relief NGO used in the GiveChain demo. Runs food and water programmes."
+      }
+    },
+    {
+      "email": "ngo2@givechain.test",
+      "name": "Omar Khan",
+      "accountType": "ngo",
+      "accountIndex": 2,
+      "organisation": {
+        "organisationName": "Demo Learning Trust",
+        "registrationNumber": "DEMO-NGO-0002",
+        "country": "Demo Country",
+        "website": "https://learning.example",
+        "description": "Fictional education charity used in the GiveChain demo. Supplies school books."
+      }
+    },
+    {
+      "email": "verifier@givechain.test",
+      "name": "Ayesha Raza",
+      "accountType": "verifier",
+      "accountIndex": 3,
+      "organisation": {
+        "organisationName": "Demo Audit Partners",
+        "registrationNumber": "DEMO-AUD-0001",
+        "country": "Demo Country",
+        "website": "https://audit.example",
+        "description": "Fictional independent audit firm that checks beneficiaries and payment evidence."
+      }
+    },
+    {
+      "email": "donor.a@givechain.test",
+      "name": "Donor A",
+      "accountType": "donor",
+      "accountIndex": 4
+    },
+    {
+      "email": "donor.b@givechain.test",
+      "name": "Donor B",
+      "accountType": "donor",
+      "accountIndex": 5
+    },
+    {
+      "email": "beneficiary1@givechain.test",
+      "name": "Beneficiary One",
+      "accountType": "beneficiary",
+      "accountIndex": 6
+    },
+    {
+      "email": "beneficiary2@givechain.test",
+      "name": "Beneficiary Two",
+      "accountType": "beneficiary",
+      "accountIndex": 7
+    },
+    {
+      "email": "beneficiary3@givechain.test",
+      "name": "Beneficiary Three",
+      "accountType": "beneficiary",
+      "accountIndex": 8
+    },
+    {
+      "email": "beneficiary4@givechain.test",
+      "name": "Beneficiary Four",
+      "accountType": "beneficiary",
+      "accountIndex": 9
+    },
+    {
+      "email": "ngo3@givechain.test",
+      "name": "Bilal Ahmed",
+      "accountType": "ngo",
+      "accountIndex": 10,
+      "_note": "Has applied to become an NGO and is waiting for the admin's approval.",
+      "organisation": {
+        "organisationName": "Demo Health Network",
+        "registrationNumber": "DEMO-NGO-0003",
+        "country": "Demo Country",
+        "website": "https://health.example",
+        "description": "Fictional health NGO that wants to run first-aid kit campaigns."
+      }
+    },
+    {
+      "email": "beneficiary5@givechain.test",
+      "name": "Beneficiary Five",
+      "accountType": "beneficiary",
+      "accountIndex": 11,
+      "_note": "Has applied for help in campaign 1 and is waiting for NGO 1 to select them.",
+      "beneficiaryApplications": [
+        {
+          "campaignId": 1,
+          "fullName": "Beneficiary Five",
+          "idNumber": "DEMO-ID-0005",
+          "phone": "+00 000 0000005",
+          "householdSize": 6,
+          "reason": "Fictional applicant: family of six with no income this winter."
+        }
+      ]
+    }
+  ]
+}

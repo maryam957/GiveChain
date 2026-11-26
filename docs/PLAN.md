@@ -1,0 +1,152 @@
+# GiveChain — Completion Plan
+
+We work one phase at a time. A phase is finished only when its "Done when" line is true.
+
+## Rules to agree on first (proposed defaults)
+
+These are business rules the spec leaves open. Change any of them before Phase 1 ends.
+
+| # | Question | Proposed rule |
+|---|---|---|
+| R1 | Which money? | **MockUSDC** (test ERC-20, 6 decimals, free "faucet" mint for the demo). No ETH donations. |
+| R2 | Who are the roles? | Admin, NGO, **Auditor** (kept from the current code), Pauser. Donors and beneficiaries need no role. |
+| R3 | Who approves? | Only an Auditor approves beneficiaries and milestones. An NGO can never approve its own. |
+| R4 | Campaign states | `Active → Completed` (NGO closes it) or `Active → Cancelled` (NGO or Admin). Donations only while Active. |
+| R5 | When are refunds allowed? | When a campaign is **Completed or Cancelled**. Each donor claims once: their share of the money not yet paid out (pro-rata). *Refined in Phase 1: Completed was added so leftover money can't get stuck.* |
+| R6 | Milestone states | `Submitted → Approved → Released → Confirmed`, or `Submitted → Rejected`, or `Approved → Cancelled`. Approve **reserves** the campaign's money; Release (by the campaign's NGO) pays the beneficiary; Confirm is done by the beneficiary. *Phase 1 added Cancel (auditor), which frees the money if a beneficiary is revoked after approval.* |
+| R7 | Emergency stop | One system-wide pause switch in `GiveChainAccess`, which also holds all roles, so every role is granted once. |
+| R11 | Separation of duties | One wallet can never hold both the NGO and Auditor roles (enforced in `GiveChainAccess`, Phase 2a). MilestoneDisbursement also checks that the approver is not the campaign's NGO. |
+| R12 | Vault link | The vault accepts payout calls only from the MilestoneDisbursement address, set once after deployment and never changeable. |
+| R8 | Evidence files | Stored on IPFS; only the CID goes on-chain. A milestone without a CID is rejected. |
+| R9 | Beneficiary privacy | On-chain: wallet + salted hash of the ID only. Auditor can revoke a beneficiary. |
+| R10 | Network | Hardhat local chain for the demo. Sepolia testnet is optional at the end. |
+
+## Phase 0 — Clean-up and setup
+
+- Start a git repository (commits are the evidence for the contribution matrix).
+- Delete the Hardhat sample files (`Lock.sol`, `test/Lock.js`, `ignition/`).
+- Fix `package.json` scripts (`test`, `compile`, `node`, `deploy`), add `.env.example`.
+- Add the gas reporter plugin setting and folders: `contracts/interfaces`, `contracts/mocks`, `backend/`, `frontend/`.
+
+**Done when:** `npm test` runs the GiveChain tests and nothing from the sample project is left.
+
+## Phase 1 — Design on paper (no contract logic yet)
+
+- `docs/ARCHITECTURE.md`: roles and permission table, campaign / beneficiary / milestone state diagrams, contract interaction diagram, trust boundaries, on-chain vs off-chain data map.
+- Write the interfaces as real code: `IProjectRegistry.sol`, `IDonationVault.sol`.
+
+**Done when:** you and your partner agree with the rules table above and the interfaces compile.
+
+## Phase 2 — Fix the contracts (small steps, tests with each step)
+
+| Step | Contract | What changes | Fixes problem |
+|---|---|---|---|
+| 2a | `MockUSDC` + `GiveChainAccess` + `AccessControlBase` | Test token; roles and the system-wide pause in one place | 4, 7 |
+| 2b | `ProjectRegistry` | Campaign target, metadata CID, status changes (R4), beneficiary revoke, implements `IProjectRegistry` | 5 |
+| 2c | `DonationVault` | **Separate balance per campaign**, per-campaign donor records, refunds by rule R5, safe ERC-20 transfers, checks beneficiary + balance + "already paid?" itself before paying | 1, 2, 3 |
+| 2d | `MilestoneDisbursement` | Separate approve / release / confirm-receipt steps (R6), talks to the others only through interfaces | 5 |
+
+Custom errors and NatSpec comments are used in every contract.
+
+Phase 2 contracts are written for **clarity first**. They become the documented gas baseline in Phase 4, where the optimizations (immutable addresses, struct packing, `bytes32` CIDs, ...) are applied and measured against them.
+
+Progress: **2a done** (GiveChainAccess, AccessControlBase, MockUSDC; 37 tests). **2b done** (ProjectRegistry; 52 tests). **2c done** (DonationVault; 54 tests). **2d done** (MilestoneDisbursement; 44 tests, plus a full end-to-end workflow test). **Phase 2 complete: 188 tests passing.**
+
+**Done when:** all unit tests for each contract pass, including the full happy path: create campaign → register and approve beneficiary → donate → submit → approve → release → confirm.
+
+## Phase 3 — Security
+
+- Tests for the 8 attack scenarios in the spec: unauthorized release, reentrancy (using a malicious token), duplicate beneficiary, double payout of one milestone, unauthorized approval, missing evidence, not enough funds, action while paused.
+- Rewrite `docs/GiveChain-Security-Package.md`: assets, actors, trust boundaries, threat → mitigation → test table, known limitations.
+
+**Done when:** every threat in the document points to a passing test.
+
+Progress: **Phase 3 done.** `test/Security.test.js` has 32 tests covering S1–S8 and five project-specific misuse scenarios (M1–M5), including a reentrancy attack through a malicious token and a control test against a deliberately vulnerable vault. 220 tests passing in total.
+
+## Phase 4 — Gas report
+
+- Keep a "before" copy of the contracts as the baseline.
+- Apply and measure on the **real** contracts: (1) tighter struct packing, (2) CID stored as `bytes32` instead of a string, (3) `immutable` contract addresses, (4) custom errors everywhere.
+- Measure at least: donate, create campaign, register beneficiary, approve milestone, release funds.
+- Rewrite `docs/GiveChain-Gas-Sheet.md` with before / after / % change and trade-offs.
+
+**Done when:** one command reproduces the before/after table.
+
+Progress: **Phase 4 done.** Three optimizations (immutable addresses, storage packing, CID hash + event) measured against `contracts/gas-baseline/` with `npm run gas`. One campaign life cycle: 1,463,435 → 1,081,009 gas (−26.1%). Trade-offs, including two measured regressions, are documented in `docs/GiveChain-Gas-Sheet.md`. 220 tests passing.
+
+## Phase 5 — Deployment
+
+- `scripts/deploy.js`: deploys everything, sets roles, saves addresses + ABIs to a file the backend and frontend read.
+- `scripts/seed.js`: creates a demo campaign, beneficiaries and donations so the demo starts with data.
+
+**Done when:** `npx hardhat node` + one deploy command gives a ready-to-use local system.
+
+Progress: **Phase 5 done.** `npm run deploy:local` writes `deployments/localhost.json` (addresses, ABIs, roles, start block). `npm run seed:local` creates three campaigns in different states, with real IPFS CIDs for the demo files. Both were run against a real local node. Demo accounts and steps are in `docs/DEMO.md`.
+
+## Phase 6 — Backend (Node.js)
+
+- IPFS upload/download endpoint (Pinata key from `.env`, with a local fallback so the demo works offline).
+- Event listener that indexes campaigns, donations, milestones and releases. *Changed in Phase 6: an in-memory index rebuilt from the chain on every start instead of SQLite; see backend/README.md.*
+- REST API for the frontend: campaigns, a campaign's history, a donor's history, transparency totals.
+
+**Done when:** uploading a file returns a CID, and a donation made on-chain shows up in the API within seconds.
+
+Progress: **Phase 6 done.** `backend/`: IPFS service (local content-addressed store, CID re-verification on read, optional Pinata), event indexer, REST API with 14 endpoints. Tests: 16 IPFS tests (`npm run backend:test`) and 18 indexer/API tests against the real contracts (in `npm test`). Verified live: deploy + seed + backend, then a refund sent on-chain appeared in the API within seconds.
+
+## Phase 7 — Frontend (React + Vite + ethers.js + MetaMask)
+
+Built in this order, each usable before the next starts:
+
+1. Wallet connect, role detection, transaction status (pending / confirmed / failed).
+2. Landing page and campaign page with **Donate** (approve + deposit).
+3. NGO dashboard: create campaign, register beneficiary, submit milestone with evidence upload.
+4. Auditor dashboard: approve beneficiaries, approve / reject milestones.
+5. Beneficiary dashboard: status, received assistance, confirm receipt.
+6. Donor dashboard and public transparency dashboard.
+
+**Done when:** the whole story can be clicked through in the browser with four MetaMask accounts.
+
+Progress: **Phase 7 done.** React + Vite + ethers.js site with MetaMask, on-chain role detection, honest transaction states, decoded contract errors, and NGO / Auditor / Beneficiary / Donor / Admin dashboards. Tested in a browser on a live local chain: donate, auditor approvals, NGO campaign creation and payout, a deliberate duplicate-registration failure, beneficiary confirmation, refund claim, pause banner, transparency check, phone layout. **Not yet tested:** the MetaMask extension itself (the test browser has none; it used the local-chain demo accounts), evidence file upload through the website form (covered by API tests), and the Pause / role buttons (the pause was triggered from the command line).
+
+## Phase 8 — Integration and hand-in
+
+- Full end-to-end run on a fresh machine using only the README.
+- README (setup, run, deploy, demo script), architecture diagrams, technical report draft, contribution matrix.
+- Demo rehearsal, including one live "attack fails" moment.
+
+**Done when:** every row of the course rubric points to a file, a test or a demo step.
+
+Progress: **Phase 8 drafted.** `docs/REPORT.md` (technical report draft), `docs/RUBRIC-CHECKLIST.md` (every rubric row → evidence), `docs/CONTRIBUTIONS.md` (matrix draft from git history). Fresh clone from GitHub installs, passes all tests, builds the frontend and runs the gas benchmark. **Team actions left:** complete the contribution matrix and the AI-use statement (REPORT §12), test MetaMask, rehearse the demo, merge into `main`.
+
+## How the old problems map to phases
+
+| Problem | Fixed in |
+|---|---|
+| 1. One shared money pool | 2c |
+| 2. Refunds close for everyone | 2c |
+| 3. Vault trusts blindly | 2c |
+| 4. ETH instead of MockUSDC | 2a, 2c |
+| 5. Missing features and interfaces | 1, 2b, 2d |
+| 6. Weak gas results | 4 |
+| 7. Three pause buttons | 2a |
+| 8. Leftover files, stale docs | 0, 3, 8 |
+| No frontend / backend / IPFS | 6, 7 |
+
+## Phase 9: Accounts, role portals and UI redesign
+
+Added after the hand-in drafts, at the team's request.
+
+- **Accounts:** email + password sign-up and login for Donor, Beneficiary, NGO and Verifier (the website's name for the auditor role); the admin is created on deployment. Each account links one MetaMask wallet by signing a message.
+- **Onboarding:** NGOs and verifiers apply with organisation details; the admin approves, which grants the role on-chain. Beneficiaries apply to a campaign; the NGO selects them (or adds people directly); a verifier approves.
+- **Portals:** a separate, sidebar-based portal per account type with a setup checklist and a to-do list; a new public site (home, campaigns, how it works, transparency).
+- **Removed:** the one-click demo account switcher. Every action now needs the person's own login and wallet.
+- **Fixed:** duplicate-person protection in the website. The NGO's identity key now comes from a deterministic wallet signature and IDs are normalised.
+- **Added:** `npm run inspect` reads any wallet's roles, balances and payments straight from the contracts.
+- Tests: 34 backend tests (18 new account tests) + 238 contract/indexer tests. Browser-tested: admin approval, NGO selecting an applicant, the duplicate-ID failure, verifier approval, new user sign-up → wallet link → application, the wrong-wallet guard.
+
+### Ganache support
+
+- `npm run deploy:ganache` / `seed:ganache` / `backend:ganache` / `frontend:ganache` / `inspect:ganache` run everything on Ganache (port 7545, chain 1337).
+- Demo logins link to the node's account #N on any local chain; each network has its own accounts file and login cookie.
+- Fixed: MetaMask error 4100 ("not authorized") when linking a wallet; the site now re-requests permission and retries, and shows plain-English MetaMask errors.
+- Tested on a real Ganache chain: deploy, seed, backend indexing, demo login linked to a Ganache account, and a donation through the website.

@@ -1,0 +1,6 @@
+DEMO RECEIPT (fictional, for the GiveChain university prototype)
+Receipt no: 002
+Supplier: Demo Wholesale Grocers
+Items: 1 winter food package, reduced size (household of three)
+Amount: 200.00 mUSDC
+Beneficiary reference: WF-002

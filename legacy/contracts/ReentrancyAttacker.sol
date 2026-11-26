@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.28;
 
-interface IDonationVault {
+interface IAttackTargetVault {
     function deposit() external payable;
     function refund(uint256 amount) external;
 }
 
 contract ReentrancyAttacker {
-    IDonationVault public vault;
+    IAttackTargetVault public vault;
     uint256 public attackAmount;
     bool public reentryBlocked;
 
     constructor(address vaultAddress) {
-        vault = IDonationVault(vaultAddress);
+        vault = IAttackTargetVault(vaultAddress);
     }
 
     function donate() external payable {

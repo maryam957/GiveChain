@@ -1,79 +1,120 @@
+// Deploys the full GiveChain system and writes deployments/<network>.json
+// (addresses, ABIs, roles, start block) for the backend and frontend.
+//
+// Local:   npm run node            (terminal 1, keep running)
+//          npm run deploy:local    (terminal 2)
+//
+// Order follows docs/ARCHITECTURE.md section 9.
+//
+// Roles on a local chain (Hardhat or Ganache) use the node's own test accounts (see docs/DEMO.md).
+// On other networks, set NGO_ADDRESSES and AUDITOR_ADDRESSES in .env
+// (comma-separated); the deployer becomes admin and pauser.
 
-const { ethers } = require("hardhat");
+const fs = require("fs");
+const path = require("path");
+const { ethers, network, artifacts } = require("hardhat");
+
+const LOCAL_NETWORKS = ["hardhat", "localhost", "ganache"];
+
+/** Hardhat test account index for each demo role (local chains only). */
+const LOCAL_ROLE_ACCOUNTS = {
+    admin: 0,
+    ngos: [1, 2],
+    auditors: [3],
+};
+
+function parseAddressList(value) {
+    return (value || "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map((s) => ethers.getAddress(s));
+}
+
+async function deployContract(name, args = []) {
+    const contract = await (await ethers.getContractFactory(name)).deploy(...args);
+    await contract.waitForDeployment();
+    const address = await contract.getAddress();
+    console.log(`  ${name.padEnd(22)} ${address}`);
+    return contract;
+}
 
 async function main() {
+    const signers = await ethers.getSigners();
+    const deployer = signers[0];
+    const isLocal = LOCAL_NETWORKS.includes(network.name);
+    const { chainId } = await ethers.provider.getNetwork();
+    const startBlock = await ethers.provider.getBlockNumber();
 
-    const [admin, ngo, auditor] = await ethers.getSigners();
+    console.log(`Deploying GiveChain to "${network.name}" (chain ${chainId})`);
+    console.log(`  Deployer / admin      ${deployer.address}\n`);
 
-    console.log("Deploying GiveChain...");
-    console.log("Admin:", admin.address);
-    console.log("NGO:", ngo.address);
-    console.log("Auditor:", auditor.address);
-
-    // 1. Deploy DonationVault
-    const Vault = await ethers.getContractFactory("DonationVault");
-    const vault = await Vault.deploy();
-    await vault.waitForDeployment();
-
-    console.log("DonationVault:", await vault.getAddress());
-
-    // 2. Deploy ProjectRegistry
-    const Registry = await ethers.getContractFactory("ProjectRegistry");
-    const registry = await Registry.deploy();
-    await registry.waitForDeployment();
-
-    console.log("ProjectRegistry:", await registry.getAddress());
-
-    // 3. Deploy MilestoneDisbursement
-    const Milestone = await ethers.getContractFactory("MilestoneDisbursement");
-
-    const milestone = await Milestone.deploy(
+    // 1-5. Contracts.
+    const access = await deployContract("GiveChainAccess", [deployer.address]);
+    const token = await deployContract("MockUSDC");
+    const registry = await deployContract("ProjectRegistry", [await access.getAddress()]);
+    const vault = await deployContract("DonationVault", [
+        await access.getAddress(),
         await registry.getAddress(),
-        await vault.getAddress()
-    );
+        await token.getAddress(),
+    ]);
+    const milestones = await deployContract("MilestoneDisbursement", [
+        await access.getAddress(),
+        await registry.getAddress(),
+        await vault.getAddress(),
+    ]);
 
-    await milestone.waitForDeployment();
+    // 6. Link the vault to MilestoneDisbursement (one time only).
+    await (await vault.setDisbursementContract(await milestones.getAddress())).wait();
+    console.log("\n  Vault linked to MilestoneDisbursement (permanent)");
 
-    console.log("MilestoneDisbursement:", await milestone.getAddress());
+    // 7. Roles.
+    const ngoAddresses = isLocal
+        ? LOCAL_ROLE_ACCOUNTS.ngos.map((i) => signers[i].address)
+        : parseAddressList(process.env.NGO_ADDRESSES);
+    const auditorAddresses = isLocal
+        ? LOCAL_ROLE_ACCOUNTS.auditors.map((i) => signers[i].address)
+        : parseAddressList(process.env.AUDITOR_ADDRESSES);
 
-    // 4. Assign NGO role in Registry
-    await registry.grantRole(
-        await registry.NGO_ROLE(),
-        ngo.address
-    );
+    const NGO_ROLE = await access.NGO_ROLE();
+    const AUDITOR_ROLE = await access.AUDITOR_ROLE();
+    for (const address of ngoAddresses) {
+        await (await access.grantRole(NGO_ROLE, address)).wait();
+        console.log(`  NGO role      -> ${address}`);
+    }
+    for (const address of auditorAddresses) {
+        await (await access.grantRole(AUDITOR_ROLE, address)).wait();
+        console.log(`  Auditor role  -> ${address}`);
+    }
 
-    // 5. Assign Auditor role in Registry
-    await registry.grantRole(
-        await registry.AUDITOR_ROLE(),
-        auditor.address
-    );
+    // Write addresses + ABIs for the backend and frontend.
+    const contracts = { GiveChainAccess: access, MockUSDC: token, ProjectRegistry: registry, DonationVault: vault, MilestoneDisbursement: milestones };
+    const output = {
+        network: network.name,
+        chainId: Number(chainId),
+        deployedAt: new Date().toISOString(),
+        startBlock,
+        deployer: deployer.address,
+        roles: {
+            admin: deployer.address,
+            pausers: [deployer.address],
+            ngos: ngoAddresses,
+            auditors: auditorAddresses,
+        },
+        contracts: {},
+    };
+    for (const [name, contract] of Object.entries(contracts)) {
+        output.contracts[name] = {
+            address: await contract.getAddress(),
+            abi: (await artifacts.readArtifact(name)).abi,
+        };
+    }
 
-    // 6. Assign NGO role in Milestone contract
-    await milestone.grantRole(
-        await milestone.NGO_ROLE(),
-        ngo.address
-    );
-
-    // 7. Assign Auditor role in Milestone contract
-    await milestone.grantRole(
-        await milestone.AUDITOR_ROLE(),
-        auditor.address
-    );
-
-    // 8. Allow Milestone contract to reserve vault funds
-    await vault.grantRole(
-        await vault.MILESTONE_ROLE(),
-        await milestone.getAddress()
-    );
-
-    // 9. Allow Milestone contract to release vault funds
-    await vault.grantRole(
-        await vault.DISBURSEMENT_ROLE(),
-        await milestone.getAddress()
-    );
-
-    console.log("All roles assigned successfully!");
-
+    const dir = path.join(__dirname, "..", "deployments");
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, `${network.name}.json`);
+    fs.writeFileSync(file, JSON.stringify(output, null, 2) + "\n");
+    console.log(`\nWritten ${path.relative(process.cwd(), file)}`);
 }
 
 main().catch((error) => {
